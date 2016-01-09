@@ -19,7 +19,7 @@ plt.rcParams['animation.ffmpeg_path'] = '/usr/bin/ffmpeg'
 FFwriter = anim.FFMpegWriter(fps=1000./13.)
 
 # path to data
-path = '/Users/cmedlock/Documents/DSP UROP/all_data/'
+path = '/Users/cmedlock/Documents/DSP_UROP/all_data/'
 dirs = os.listdir(path)
 
 # path to output

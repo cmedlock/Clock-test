@@ -5,7 +5,7 @@ import numpy as np
 import os
 from pylab import *
 
-path = '/Users/cmedlock/Documents/DSP UROP/all_data/'
+path = '/Users/cmedlock/Documents/DSP_UROP/all_data/'
 dirs = os.listdir(path)
 
 if not os.path.exists(path+'figs_raw'):
@@ -98,6 +98,7 @@ for fname in dirs:
         xy_copy.set_ylim(min(y_copy)-10,max(y_copy)+10)
     plt.axis('equal')
     
+    # set titles and file labels
     title_fontsize = 20
     #xt_copy.set_title('Sample Copy Clock',fontsize=title_fontsize)
     #yt_copy.set_title('Sample Copy Clock',fontsize=title_fontsize)
@@ -107,6 +108,7 @@ for fname in dirs:
     fig_yt_copy.text(0.99, 0.96, fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
     fig_xy_copy.text(0.99, 0.96, fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
 
+    # set axis labels
     x_axis_fontsize = 20
     xt_copy.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
     yt_copy.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
@@ -117,6 +119,7 @@ for fname in dirs:
     yt_copy.set_ylabel('y',fontsize=y_axis_fontsize)
     xy_copy.set_ylabel('y',fontsize=y_axis_fontsize)
 
+    # save figures
     fig_xt_copy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/xt_copy_'+fname[:len(fname)-4]+'.png')
     fig_yt_copy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/yt_copy_'+fname[:len(fname)-4]+'.png')
     fig_xy_copy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/xy_copy_'+fname[:len(fname)-4]+'.png')
@@ -139,6 +142,7 @@ for fname in dirs:
         xy_command.set_ylim(min(y_command)-10,max(y_command)+10)
     plt.axis('equal')
 
+    # set titles and file labels
     #xt_command.set_title('Sample Command Clock',fontsize=title_fontsize)
     #yt_command.set_title('Sample Command Clock',fontsize=title_fontsize)
     #xy_command.set_title('Sample Command Clock',fontsize=title_fontsize)
@@ -147,6 +151,7 @@ for fname in dirs:
     fig_yt_command.text(0.99, 0.96, fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
     fig_xy_command.text(0.99, 0.96, fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
 
+    # set axis labels
     xt_command.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
     yt_command.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
     xy_command.set_xlabel('x',fontsize=x_axis_fontsize)
@@ -155,6 +160,7 @@ for fname in dirs:
     yt_command.set_ylabel('y',fontsize=y_axis_fontsize)
     xy_command.set_ylabel('y',fontsize=y_axis_fontsize)
 
+    # save figures
     fig_xt_command.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/xt_command_'+fname[:len(fname)-4]+'.png')
     fig_yt_command.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/yt_command_'+fname[:len(fname)-4]+'.png')
     fig_xy_command.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/xy_command_'+fname[:len(fname)-4]+'.png')

@@ -2,6 +2,7 @@ import math
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+import numpy.fft
 import os
 from pylab import *
 
@@ -80,51 +81,29 @@ for fname in dirs:
     x_copy,y_copy,t_copy = np.array(x_copy),np.array(y_copy),np.array(t_copy)
     x_command,y_command,t_command = np.array(x_command),np.array(y_command),np.array(t_command)
 
-    # velocities and accelerations
-    vx_copy,vy_copy = [],[]
-    for d in range(1,len(x_copy)):
-        vx = (x_copy[d]-x_copy[d-1])/(t_copy[d]-t_copy[d-1])
-        vy = (y_copy[d]-y_copy[d-1])/(t_copy[d]-t_copy[d-1])
-        vx_copy.append(vx)
-        vy_copy.append(vy)
-    vx_command,vy_command = [],[]
-    for a in range(1,len(x_command)):
-        vx = (x_command[a]-x_command[a-1])/(t_command[a]-t_command[a-1])
-        vy = (y_command[a]-y_command[a-1])/(t_command[a]-t_command[a-1])
-        vx_command.append(vx)
-        vy_command.append(vy)
-    ax_copy,ay_copy = [],[]
-    for b in range(1,len(vx_copy)):
-        ax = (vx_copy[b]-vx_copy[b-1])/(t_copy[b]-t_copy[b-1])
-        ay = (vy_copy[b]-vy_copy[b-1])/(t_copy[b]-t_copy[b-1])
-        ax_copy.append(ax)
-        ay_copy.append(ay)
-    ax_command,ay_command = [],[]
-    for c in range(1,len(vx_command)):
-        ax = (vx_command[c]-vx_command[c-1])/(t_command[c]-t_command[c-1])
-        ay = (vy_command[c]-vy_command[c-1])/(t_command[c]-t_command[c-1])
-        ax_command.append(ax)
-        ay_command.append(ay)
-        
+    # dft's
+    dft_size = 750
+    dftx_copy,dfty_copy = np.fft.fft(x_copy,n=dft_size),np.fft.fft(y_copy,n=dft_size)
+    dftx_command,dfty_command = np.fft.fft(x_command,n=dft_size),np.fft.fft(y_command,n=dft_size)
+    k = np.arange(dft_size)
+    freq = 2*np.pi/dft_size*k
+    #freq = np.fft.fftfreq(n=1024,d=1/(2*np.pi)) # NB: centered around 0
+    
     # copy clocks
     fig_xt_copy,fig_yt_copy = plt.figure(),plt.figure()
-    fig_xt_copy.subplots_adjust(right=0.85)
-    fig_yt_copy.subplots_adjust(right=0.85)
-
+    fig_xt_copy.subplots_adjust(hspace=0.3)
+    fig_yt_copy.subplots_adjust(hspace=0.3)
     xt_copy,yt_copy = fig_xt_copy.add_subplot(211),fig_yt_copy.add_subplot(211)
     xt_copy.plot(t_copy-t_copy[0],x_copy)
     yt_copy.plot(t_copy-t_copy[0],y_copy)
-
-    vxt_copy,vyt_copy = fig_xt_copy.add_subplot(212),fig_yt_copy.add_subplot(212)    
-    marker_size,marker_edgecolor_v,linecolor_v = 5,'darkred','red'
-    vxt_copy.plot(t_copy[1:]-t_copy[0],vx_copy,linecolor_v,markersize=marker_size)#,markeredgecolor=marker_edgecolor_v)
-    vyt_copy.plot(t_copy[1:]-t_copy[0],vy_copy,linecolor_v,markersize=marker_size)#,markeredgecolor=marker_edgecolor_v)
-
-    axt_copy,ayt_copy = vxt_copy.twinx(),vyt_copy.twinx()
-    marker_edgecolor_a,linecolor_a = 'darkgreen','green'
-    axt_copy.plot(t_copy[2:]-t_copy[0],ax_copy,linecolor_a,markersize=marker_size)#,markeredgecolor=marker_edgecolor_a)
-    ayt_copy.plot(t_copy[2:]-t_copy[0],ay_copy,linecolor_a,markersize=marker_size)#,markeredgecolor=marker_edgecolor_a)
     
+    dftxk_copy,dftyk_copy = fig_xt_copy.add_subplot(212),fig_yt_copy.add_subplot(212)    
+    linecolor_dft = 'red'
+    dftxk_copy.plot(k,np.abs(dftx_copy),linecolor_dft)
+    dftyk_copy.plot(k,np.abs(dfty_copy),linecolor_dft)
+    dftxk_copy.set_yscale('log')
+    dftyk_copy.set_yscale('log')
+
     # set titles and file labels
     title_fontsize = 20
     #xt_copy.set_title('Sample Copy Clock',fontsize=title_fontsize)
@@ -145,8 +124,10 @@ for fname in dirs:
         
     # set axis labels
     x_axis_fontsize = 20
-    vxt_copy.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
-    vyt_copy.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
+    xt_copy.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
+    yt_copy.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
+    dftxk_copy.set_xlabel(r'$k$',fontsize=x_axis_fontsize)
+    dftyk_copy.set_xlabel(r'$k$',fontsize=x_axis_fontsize)
 
     y_axis_fontsize = 25
     linecolor_xy = 'blue'
@@ -157,39 +138,31 @@ for fname in dirs:
     for y1 in yt_copy.get_yticklabels():
         y1.set_color(linecolor_xy)
         
-    vxt_copy.set_ylabel(r'$v_x$',color=linecolor_v,fontsize=y_axis_fontsize)
-    vyt_copy.set_ylabel(r'$v_y$',color=linecolor_v,fontsize=y_axis_fontsize)
-    axt_copy.set_ylabel(r'$a_x$',color=linecolor_a,fontsize=y_axis_fontsize)
-    ayt_copy.set_ylabel(r'$a_y$',color=linecolor_a,fontsize=y_axis_fontsize)
-    for v1 in vxt_copy.get_yticklabels():
-        v1.set_color(linecolor_v)
-    for v2 in vyt_copy.get_yticklabels():
-        v2.set_color(linecolor_v)
-    for m1 in axt_copy.get_yticklabels():
-        m1.set_color(linecolor_a)
-    for m2 in ayt_copy.get_yticklabels():
-        m2.set_color(linecolor_a)
+    dftxk_copy.set_ylabel(r'$|X[k]|$',color=linecolor_dft,fontsize=y_axis_fontsize)
+    dftyk_copy.set_ylabel(r'$|Y[k]|$',color=linecolor_dft,fontsize=y_axis_fontsize)
+    for v1 in dftxk_copy.get_yticklabels():
+        v1.set_color(linecolor_dft)
+    for v2 in dftyk_copy.get_yticklabels():
+        v2.set_color(linecolor_dft)
     
     # save figures
-    fig_xt_copy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/vxt_axt_copy_'+fname[:len(fname)-4]+'.png')
-    fig_yt_copy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/vyt_ayt_copy_'+fname[:len(fname)-4]+'.png')
+    fig_xt_copy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/dftx_copy_'+fname[:len(fname)-4]+'.png')
+    fig_yt_copy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/dfty_copy_'+fname[:len(fname)-4]+'.png')
 
     # command clocks
     fig_xt_command,fig_yt_command = plt.figure(),plt.figure()
-    fig_xt_command.subplots_adjust(right=0.85)
-    fig_yt_command.subplots_adjust(right=0.85)
-    
+    fig_xt_command.subplots_adjust(hspace=0.3)
+    fig_yt_command.subplots_adjust(hspace=0.3)
     xt_command,yt_command = fig_xt_command.add_subplot(211),fig_yt_command.add_subplot(211)
     xt_command.plot(t_command-t_command[0],x_command)
     yt_command.plot(t_command-t_command[0],y_command)
 
-    vxt_command,vyt_command = fig_xt_command.add_subplot(212),fig_yt_command.add_subplot(212)
-    vxt_command.plot(t_command[1:]-t_command[0],vx_command,linecolor_v,markersize=marker_size)#,markeredgecolor=marker_edgecolor_v)
-    vyt_command.plot(t_command[1:]-t_command[0],vy_command,linecolor_v,markersize=marker_size)#,markeredgecolor=marker_edgecolor_v)
-
-    axt_command,ayt_command = vxt_command.twinx(),vyt_command.twinx()
-    axt_command.plot(t_command[2:]-t_command[0],ax_command,linecolor_a,markersize=marker_size)#,markeredgecolor=marker_edgecolor_a)
-    ayt_command.plot(t_command[2:]-t_command[0],ay_command,linecolor_a,markersize=marker_size)#,markeredgecolor=marker_edgecolor_a)
+    dftxk_command,dftyk_command = fig_xt_command.add_subplot(212),fig_yt_command.add_subplot(212)    
+    linecolor_dft = 'red'
+    dftxk_command.plot(k,np.abs(dftx_command),linecolor_dft)
+    dftyk_command.plot(k,np.abs(dfty_command),linecolor_dft)
+    dftxk_command.set_yscale('log')
+    dftyk_command.set_yscale('log')
 
     # set titles and file labels
     #xt_command.set_title('Sample Command Clock',fontsize=title_fontsize)
@@ -209,8 +182,10 @@ for fname in dirs:
         print 'not a valid filename'
         
     # set axis labels
-    vxt_command.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
-    vyt_command.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
+    xt_command.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
+    yt_command.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
+    dftxk_command.set_xlabel(r'$k$',fontsize=x_axis_fontsize)
+    dftyk_command.set_xlabel(r'$k$',fontsize=x_axis_fontsize)
 
     xt_command.set_ylabel(r'$x$',color=linecolor_xy,fontsize=y_axis_fontsize)
     yt_command.set_ylabel(r'$y$',color=linecolor_xy,fontsize=y_axis_fontsize)
@@ -219,22 +194,16 @@ for fname in dirs:
     for y1 in yt_command.get_yticklabels():
         y1.set_color(linecolor_xy)
 
-    vxt_command.set_ylabel(r'$v_x$',color=linecolor_v,fontsize=y_axis_fontsize)
-    vyt_command.set_ylabel(r'$v_y$',color=linecolor_v,fontsize=y_axis_fontsize)
-    axt_command.set_ylabel(r'$a_x$',color=linecolor_a,fontsize=y_axis_fontsize)
-    ayt_command.set_ylabel(r'$a_y$',color=linecolor_a,fontsize=y_axis_fontsize)
-    for v1 in vxt_command.get_yticklabels():
-        v1.set_color(linecolor_v)
-    for v2 in vyt_command.get_yticklabels():
-        v2.set_color(linecolor_v)
-    for m1 in axt_command.get_yticklabels():
-        m1.set_color(linecolor_a)
-    for m2 in ayt_command.get_yticklabels():
-        m2.set_color(linecolor_a)
+    dftxk_command.set_ylabel(r'$|X[k]|$',color=linecolor_dft,fontsize=y_axis_fontsize)
+    dftyk_command.set_ylabel(r'$|Y[k]|$',color=linecolor_dft,fontsize=y_axis_fontsize)
+    for v1 in dftxk_command.get_yticklabels():
+        v1.set_color(linecolor_dft)
+    for v2 in dftyk_command.get_yticklabels():
+        v2.set_color(linecolor_dft)
 
     # save figures
-    fig_xt_command.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/vxt_axt_command_'+fname[:len(fname)-4]+'.png')
-    fig_yt_command.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/vyt_ayt_command_'+fname[:len(fname)-4]+'.png')
+    fig_xt_command.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/dftx_command_'+fname[:len(fname)-4]+'.png')
+    fig_yt_command.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/dfty_command_'+fname[:len(fname)-4]+'.png')
 
     plt.close('all')
     
