@@ -81,10 +81,14 @@ for fname in dirs:
     x_copy,y_copy,t_copy = np.array(x_copy),np.array(y_copy),np.array(t_copy)
     x_command,y_command,t_command = np.array(x_command),np.array(y_command),np.array(t_command)
 
+    # subtract mean values (zm = zero mean)
+    x_copy_zm,y_copy_zm = x_copy-mean(x_copy),y_copy-mean(y_copy)
+    x_command_zm,y_command_zm = x_command-mean(x_command),y_command-mean(y_command)
+    
     # dft's
     dft_size = 750
-    dftx_copy,dfty_copy = np.fft.fft(x_copy,n=dft_size),np.fft.fft(y_copy,n=dft_size)
-    dftx_command,dfty_command = np.fft.fft(x_command,n=dft_size),np.fft.fft(y_command,n=dft_size)
+    dftx_copy,dfty_copy = np.fft.fft(x_copy_zm,n=dft_size),np.fft.fft(y_copy_zm,n=dft_size)
+    dftx_command,dfty_command = np.fft.fft(x_command_zm,n=dft_size),np.fft.fft(y_command_zm,n=dft_size)
     k = np.arange(dft_size)
     freq = 2*np.pi/dft_size*k
     #freq = np.fft.fftfreq(n=1024,d=1/(2*np.pi)) # NB: centered around 0
@@ -99,8 +103,10 @@ for fname in dirs:
     
     dftxk_copy,dftyk_copy = fig_xt_copy.add_subplot(212),fig_yt_copy.add_subplot(212)    
     linecolor_dft = 'red'
-    dftxk_copy.plot(k,np.abs(dftx_copy),linecolor_dft)
-    dftyk_copy.plot(k,np.abs(dfty_copy),linecolor_dft)
+    dftxk_copy.plot(k[:dft_size/2],np.abs(dftx_copy)[:dft_size/2],linecolor_dft)
+    dftyk_copy.plot(k[:dft_size/2],np.abs(dfty_copy)[:dft_size/2],linecolor_dft)
+    dftxk_copy.set_ylim(bottom=min(np.abs(dftx_copy[1:]))/10,top=max(np.abs(dftx_copy))*10)
+    dftyk_copy.set_ylim(bottom=min(np.abs(dfty_copy[1:]))/10,top=max(np.abs(dfty_copy))*10)
     dftxk_copy.set_yscale('log')
     dftyk_copy.set_yscale('log')
 
@@ -159,8 +165,10 @@ for fname in dirs:
 
     dftxk_command,dftyk_command = fig_xt_command.add_subplot(212),fig_yt_command.add_subplot(212)    
     linecolor_dft = 'red'
-    dftxk_command.plot(k,np.abs(dftx_command),linecolor_dft)
-    dftyk_command.plot(k,np.abs(dfty_command),linecolor_dft)
+    dftxk_command.plot(k[:dft_size/2],np.abs(dftx_command)[:dft_size/2],linecolor_dft)
+    dftyk_command.plot(k[:dft_size/2],np.abs(dfty_command)[:dft_size/2],linecolor_dft)
+    dftxk_command.set_ylim(bottom=min(np.abs(dftx_command[1:]))/10,top=max(np.abs(dftx_command))*10)
+    dftyk_command.set_ylim(bottom=min(np.abs(dfty_command[1:]))/10,top=max(np.abs(dfty_command))*10)
     dftxk_command.set_yscale('log')
     dftyk_command.set_yscale('log')
 
