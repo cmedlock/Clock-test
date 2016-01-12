@@ -1,6 +1,7 @@
 import math
 import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.animation as anim
 import numpy as np
 import numpy.fft
 import os
@@ -183,17 +184,63 @@ def deriv_doublederiv(x,y,t):
         ax.append(a_x)
         ay.append(a_y)
     return vx,vy,ax,ay
-      
+
+def draw_clock(x,y,name,fname,path):
+    # input: x[t],y[t],t,x- and y-axis labels
+    #        fname,path in order to save the figure and video
+    # output: xy_name_fname.png with plot of circle,
+
+    # figures
+    fig_xy = plt.figure()
+    xy = fig_xy.add_subplot(111,aspect=1.0)
+    xy.plot(x,y)
+
+    # equalize axis scales
+    if max(x)-min(x)>max(y)-min(y):
+        ax_range = max(x)-min(x)+20
+        xy.set_xlim(min(x)-10,max(x)+10)
+        xy.set_ylim(min(y)-10,min(y)+ax_range)
+    else:
+        ax_range = max(y)-min(y)+20
+        xy.set_xlim(min(x)-10,min(x)+ax_range)
+        xy.set_ylim(min(y)-10,max(y)+10)
+    plt.axis('equal')
+    
+    # set titles and file labels
+    title_fontsize = 20
+    #xt.set_title('Sample Copy Clock',fontsize=title_fontsize)
+    #yt.set_title('Sample Copy Clock',fontsize=title_fontsize)
+    #xy.set_title('Sample Copy Clock',fontsize=title_fontsize)
+
+    fig_xy.text(0.99, 0.96, fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
+
+    if 'YDU' in fname:
+        fig_xy.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+    elif 'CIN' in fname:
+        fig_xy.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+    else:
+        print 'not a valid filename'
+
+    # set axis labels
+    x_axis_fontsize = 20
+    xy.set_xlabel('x',fontsize=x_axis_fontsize)
+
+    y_axis_fontsize = 20
+    xy.set_ylabel('y',fontsize=y_axis_fontsize)
+
+    # save figures
+    fig_xy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/'+name+'_'+fname[:len(fname)-4]+'.png')
+                      
 def plot_xyt_other(x,t,xname,tname,otherx,w,otherxname,wname,logplot,othername,fname,path):
     # input: x[t],t,x- and y-axis labels
     #        other[w],w (for e.g. |X[k]|,k), x- and y-axis labels
     #        log plot option for spectra
-    #        othername,fname in order to save the figure
+    #        othername,fname,path in order to save the figure
     # output: xt_othername_fname.png with plot of x[t]
     #         directly above plot of other[n]
 
     fig_xt = plt.figure()
-    fig_xt.subplots_adjust(hspace=0.3)
+    fig_xt.subplots_adjust(left=0.15,hspace=0.3)
     xt = fig_xt.add_subplot(211)
     xt.plot(t,x)
     
