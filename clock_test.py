@@ -6,7 +6,7 @@ import numpy.fft
 import os
 from pylab import *
 
-def parse_file(path,fname):
+def parse_file(fname,path):
     # input: data file
     # output: x,y,p,t,
     # x_command,y_command,p_command,t_command (lists)
@@ -91,6 +91,7 @@ def parse_file(path,fname):
 def interpolate(x,y):
     # input: x,y (lists) with missing points marked by the value -5
     # output: xintp,yintp (lists) with the missing points filled in
+    #         using a sinc function for interpolation
 
     if len(x)!=len(y):
         raise NameError('ERROR: x and y lists do not have the same length')
@@ -136,12 +137,32 @@ def interpolate(x,y):
                 xintp.append(xexpand[v])
                 yintp.append(yexpand[v])
             elif v%2==1 and xexpand[v]!=0:
-                #print '      inserting missing point (',xexpand[v],',',yexpand[v],') at index ',v/2
+                print '      inserting missing point (',xexpand[v],',',yexpand[v],') at index ',v/2
                 xintp.append(xexpand[v])
                 yintp.append(yexpand[v])
         return xintp,yintp
     return x,y
 
+def linear_interpolate(x,y):
+    # input: x,y (lists) with missing points marked by the value -5
+    # output: xintp,yintp (lists) with the missing points filled in
+    #         using linear interpolation
+
+    if len(x)!=len(y):
+        raise NameError('ERROR: x and y lists do not have the same length')
+
+    if -5 in x:
+        xintp,yintp = [],[]
+        for w in range(len(x)):
+            if x[w]!=-5:
+                xintp.append(x[w])
+                yintp.append(y[w])
+            else:
+                xintp.append((x[w-1]+x[w+1])/2)
+                yintp.append((y[w-1]+y[w+1])/2)
+        return xintp,yintp
+    return x,y
+        
 def deriv_doublederiv(x,y,t):
     # input: x[t],y[t],t
     # output: vx[t],vy[t],ax[t],ay[t]
@@ -160,79 +181,59 @@ def deriv_doublederiv(x,y,t):
         a_x = (vx[b]-vx[b-1])/(t[b]-t[b-1])
         a_y = (vy[b]-vy[b-1])/(t[b]-t[b-1])
         ax.append(a_x)
-        ax.append(a_y)
+        ay.append(a_y)
     return vx,vy,ax,ay
       
-def plot_xyt_other(x,y,t,otherx,othery,n,othername,fname):
-    # input: x[t],y[t],t
-    #        other[n],n (for e.g. |X[k]|,k)
-    # output: xyt_othername_fname.png with plots of x[t] or y[t]
-    #         directly above other[n]
+def plot_xyt_other(x,t,xname,tname,otherx,w,otherxname,wname,logplot,othername,fname,path):
+    # input: x[t],t,x- and y-axis labels
+    #        other[w],w (for e.g. |X[k]|,k), x- and y-axis labels
+    #        log plot option for spectra
+    #        othername,fname in order to save the figure
+    # output: xt_othername_fname.png with plot of x[t]
+    #         directly above plot of other[n]
 
-    fig_xt,fig_yt = plt.figure(),plt.figure()
-    fig_xt.subplots_adjust(right=0.85)
-    fig_yt.subplots_adjust(right=0.85)
-
-    xt,yt = fig_xt.add_subplot(211),fig_yt.add_subplot(211)
-    xt.plot(t-t[0],x)
-    yt.plot(t-t[0],y)
-
-    vxt,vyt = fig_xt.add_subplot(212),fig_yt.add_subplot(212)    
-    marker_size,marker_edgecolor_v,linecolor_v = 5,'darkred','red'
-    vxt.plot(t[1:]-t[0],vx,linecolor_v,markersize=marker_size)#,markeredgecolor=marker_edgecolor_v)
-    vyt.plot(t[1:]-t[0],vy,linecolor_v,markersize=marker_size)#,markeredgecolor=marker_edgecolor_v)
-
-    axt,ayt = vxt.twinx(),vyt.twinx()
-    marker_edgecolor_a,linecolor_a = 'darkgreen','green'
-    axt.plot(t[2:]-t[0],ax,linecolor_a,markersize=marker_size)#,markeredgecolor=marker_edgecolor_a)
-    ayt.plot(t[2:]-t[0],ay,linecolor_a,markersize=marker_size)#,markeredgecolor=marker_edgecolor_a)
+    fig_xt = plt.figure()
+    fig_xt.subplots_adjust(hspace=0.3)
+    xt = fig_xt.add_subplot(211)
+    xt.plot(t,x)
     
+    otherxw = fig_xt.add_subplot(212)  
+    linecolor_other = 'red'
+    otherxw.plot(w,otherx,linecolor_other)
+    if logplot:
+        otherxw.set_ylim(bottom=min(other[1:])/10,top=max(other)*10)
+        otherxw.set_yscale('log')
+
     # set titles and file labels
     title_fontsize = 20
     #xt.set_title('Sample Copy Clock',fontsize=title_fontsize)
-    #yt.set_title('Sample Copy Clock',fontsize=title_fontsize)
-    #xy.set_title('Sample Copy Clock',fontsize=title_fontsize)
 
     fig_xt.text(0.99, 0.96,fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
-    fig_yt.text(0.99, 0.96,fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
 
     if 'YDU' in fname:
         fig_xt.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
-        fig_yt.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
     elif 'CIN' in fname:
         fig_xt.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
-        fig_yt.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
     else:
         print 'not a valid filename'
         
     # set axis labels
     x_axis_fontsize = 20
-    vxt.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
-    vyt.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
+    xt.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
+    otherxw.set_xlabel(wname,fontsize=x_axis_fontsize)
 
     y_axis_fontsize = 25
     linecolor_xy = 'blue'
-    xt.set_ylabel(r'$x$',color=linecolor_xy,fontsize=y_axis_fontsize)
-    yt.set_ylabel(r'$y$',color=linecolor_xy,fontsize=y_axis_fontsize)
+    xt.set_ylabel(xname,color=linecolor_xy,fontsize=y_axis_fontsize)
     for x1 in xt.get_yticklabels():
         x1.set_color(linecolor_xy)
-    for y1 in yt.get_yticklabels():
-        y1.set_color(linecolor_xy)
         
-    vxt.set_ylabel(r'$v_x$',color=linecolor_v,fontsize=y_axis_fontsize)
-    vyt.set_ylabel(r'$v_y$',color=linecolor_v,fontsize=y_axis_fontsize)
-    axt.set_ylabel(r'$a_x$',color=linecolor_a,fontsize=y_axis_fontsize)
-    ayt.set_ylabel(r'$a_y$',color=linecolor_a,fontsize=y_axis_fontsize)
-    for v1 in vxt.get_yticklabels():
-        v1.set_color(linecolor_v)
-    for v2 in vyt.get_yticklabels():
-        v2.set_color(linecolor_v)
-    for m1 in axt.get_yticklabels():
-        m1.set_color(linecolor_a)
-    for m2 in ayt.get_yticklabels():
-        m2.set_color(linecolor_a)
+    otherxw.set_ylabel(r'$'+otherxname+'$',color=linecolor_other,fontsize=y_axis_fontsize)
+    for d1 in otherxw.get_yticklabels():
+        d1.set_color(linecolor_other)
     
     # save figures
-    fig_xt.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/vxt_axt_'+fname[:len(fname)-4]+'.png')
-    fig_yt.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/vyt_ayt_'+fname[:len(fname)-4]+'.png')
+    fig_xt.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/'+othername+'_'+fname[:len(fname)-4]+'.png')
+    
+    plt.close('all')
     

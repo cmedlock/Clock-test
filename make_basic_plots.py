@@ -21,14 +21,14 @@ for fname in dirs[:3]:
         continue
         
     # get coordinates and timestamps
-    x_copy,y_copy,p_copy,t_copy,x_command,y_command,p_command,t_command = ct.parse_file(path,fname)
+    x_copy,y_copy,p_copy,t_copy,x_command,y_command,p_command,t_command = ct.parse_file(fname,path)
     print '\n',len(x_copy),len(y_copy)
     print len(x_command),len(y_command),'\n'
     
     # interpolate to find missing points if necessary
     # assume for right now that we are never missing multiple consecutive points
-    x_copy,y_copy = ct.interpolate(x_copy,y_copy)
-    x_command,y_command = ct.interpolate(x_command,y_command)
+    x_copy,y_copy = ct.linear_interpolate(x_copy,y_copy)
+    x_command,y_command = ct.linear_interpolate(x_command,y_command)
     print '\n',len(x_copy),len(y_copy)
     print len(x_command),len(y_command),'\n'
     
@@ -37,8 +37,18 @@ for fname in dirs[:3]:
     
     # plot x[t], y[t], v[t], and a[t]
     vx_copy,vy_copy,ax_copy,ay_copy = ct.deriv_doublederiv(x_copy,y_copy,t_copy)
+    print len(vx_copy),len(ax_copy),len(t_copy[2:]-t_copy[0])
     vx_command,vy_command,ax_command,ay_command = ct.deriv_doublederiv(x_command,y_command,t_command)
-    ct.plot_xyt_other(x,y,t,vx_copy,vy_copy,t_copy,path,othername,fname)
+    # copy clocks
+    ct.plot_xyt_other(x_copy,t_copy-t_copy[0],'x','time [ms]',vx_copy,t_copy[1:]-t_copy[0],'v_x','time [ms]',False,'vxt_copy',fname,path)
+    ct.plot_xyt_other(x_copy,t_copy-t_copy[0],'x','time [ms]',ax_copy,t_copy[2:]-t_copy[0],'a_x','time [ms]',False,'axt_copy',fname,path)
+    ct.plot_xyt_other(y_copy,t_copy-t_copy[0],'y','time [ms]',vy_copy,t_copy[1:]-t_copy[0],'v_y','time [ms]',False,'vyt_copy',fname,path)
+    ct.plot_xyt_other(y_copy,t_copy-t_copy[0],'y','time [ms]',ay_copy,t_copy[2:]-t_copy[0],'a_y','time [ms]',False,'ayt_copy',fname,path)
+    # command clocks
+    ct.plot_xyt_other(x_command,t_command-t_command[0],'x','time [ms]',vx_command,t_command[1:]-t_command[0],'v_x','time [ms]',False,'vxt_command',fname,path)
+    ct.plot_xyt_other(x_command,t_command-t_command[0],'x','time [ms]',ax_command,t_command[2:]-t_command[0],'a_x','time [ms]',False,'axt_command',fname,path)
+    ct.plot_xyt_other(y_command,t_command-t_command[0],'y','time [ms]',vy_command,t_command[1:]-t_command[0],'v_y','time [ms]',False,'vyt_command',fname,path)
+    ct.plot_xyt_other(y_command,t_command-t_command[0],'y','time [ms]',ay_command,t_command[2:]-t_command[0],'a_y','time [ms]',False,'ayt_command',fname,path)
 
     # plot spectrum of x[t] and y[t]
     
