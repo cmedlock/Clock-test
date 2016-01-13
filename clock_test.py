@@ -89,25 +89,56 @@ def parse_file(fname,path):
 
     return x,y,p,t,x_command,y_command,p_command,t_command
 
-def interpolate(x,y):
-    # input: x,y (lists) with missing points marked by the value -5
-    # output: xintp,yintp (lists) with the missing points filled in
+def interpolate(x):
+    # input: x (list) with missing points marked by the value -5
+    # output: xintp (lists) with the missing points filled in
     #         using a sinc function for interpolation
 
-    if len(x)!=len(y):
-        raise NameError('ERROR: x and y lists do not have the same length')
-    
-    sinc = None
-    xexpand,yexpand = [],[]
     if -5 in x:
+        print '   list x has a missing point, downsampling and expanding...'
+        # interpolate to find the missing points
+        xintp = [elt for elt in x]
+        missing_point = xintp.index(-5)
+        print 'x is missing point ',missing_point
+        sinc = []
         # expand by 2 (insert zeros)
-        print '   lists x and y have missing points, expanding a[] and b[t]...'
+        # downsample then expand by 2
+        # this code can only handle a single missing point with an odd index
+        expanded = []
+        # if the missing point had an even index, want to save all of the odd samples
+        # do this by appending a zero to the start of the list before downsampling and
+        # expanding it
+        if missing_point%2==0:
+            expanded.append(0)
+        # if the missing point had an odd index, want to save all of the even samples
+        elif missing_point%2==1:
+            for d in range(len(x)):
+                if d%2==0:
+                    expanded.append(x[d])
+                else:
+                    expanded.append(0)
+        #print x[:9]
+        #print expanded[:10]
+        # windowed sinc filter
+        L = 2
+        n_neg = np.arange(-missing_point,0)
+        n_pos = np.arange(1,len(expanded)-missing_point)
+        sinc_neg = np.sin(np.pi*n_neg/L)/(np.pi*n_neg/L)
+        sinc_pos = np.sin(np.pi*n_pos/L)/(np.pi*n_pos/L)
+        # NB: normally would set sinc[0] equal to 1, but in this
+        # case we don't want the -5 at that point to contribute to
+        # the sum, so just set sinc[0] equal to 0
+        sinc = np.concatenate((sinc_neg,np.array([0]),sinc_pos))
+        # evaluate convolution at missing point
+        missing = np.dot(expanded,sinc)
+        xintp[missing_point] = missing
+        return xintp
+    return x
+"""
         for v in range(len(x)-1):
             xexpand.append(x[v])
-            yexpand.append(y[v])
             if x[v]!=-5 and x[v+1]!=-5:
                 xexpand.append(0)
-                yexpand.append(0)
         xexpand.append(x[-1])
         yexpand.append(y[-1])
         for d in range(len(xexpand)):
@@ -141,28 +172,22 @@ def interpolate(x,y):
                 print '      inserting missing point (',xexpand[v],',',yexpand[v],') at index ',v/2
                 xintp.append(xexpand[v])
                 yintp.append(yexpand[v])
-        return xintp,yintp
-    return x,y
+"""
 
-def linear_interpolate(x,y):
-    # input: x,y (lists) with missing points marked by the value -5
-    # output: xintp,yintp (lists) with the missing points filled in
+def linear_interpolate(x):
+    # input: x (list) with missing points marked by the value -5
+    # output: xintp (list) with the missing points filled in
     #         using linear interpolation
 
-    if len(x)!=len(y):
-        raise NameError('ERROR: x and y lists do not have the same length')
-
     if -5 in x:
-        xintp,yintp = [],[]
+        xintp = []
         for w in range(len(x)):
             if x[w]!=-5:
                 xintp.append(x[w])
-                yintp.append(y[w])
             else:
                 xintp.append((x[w-1]+x[w+1])/2)
-                yintp.append((y[w-1]+y[w+1])/2)
-        return xintp,yintp
-    return x,y
+        return xintp
+    return x
         
 def deriv_doublederiv(x,y,t):
     # input: x[t],y[t],t
