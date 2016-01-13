@@ -17,6 +17,7 @@ if not os.path.exists(path+'figs_raw'):
 # length of truncated sinc (longer = more accurate interpolation)
 # this code only works for even lengths
 lengths = [10,20,60,100,200,300,400,500,600,700,800,900,1000]
+#lengths = [10]
 missing_point = 1
 percent_errors = []
 
@@ -99,6 +100,40 @@ for length in lengths:
     print '      percent error for point ',missing_point,' is ',error
     percent_errors.append(error)
 
+    # plots
+    if length<100:
+        fig_xn = plt.figure()
+        # no interpolation
+        xn = fig_xn.add_subplot(311)
+        xn.stem(n,x,linestyle='none',marker='o')
+        xn.set_xlim(left=n[0]-0.5,right=n[-1]+0.5)
+        xn.set_ylim(bottom=-7,top=max(x)*2)
+        # downsampled-then-expanded signal and truncated sinc
+        sincn = fig_xn.add_subplot(312)
+        sincn.stem(n,sinc,linestyle='none',marker='o')
+        sincn.set_xlim(left=n[0]-0.5,right=n[-1]+0.5)
+        # interpolated signal
+        xintpn = fig_xn.add_subplot(313)
+        xintpn.stem(n,xintp,linestyle='none',marker='o')
+        #xintpn.plot(ntrue,xtrue,linestyle='--')
+        xintpn.set_xlim(left=n[0]-0.5,right=n[-1]+0.5)
+        xintpn.set_ylim(bottom=-2,top=max(xintp)*2)
+    
+        # label with percent error
+        fig_xn.text(0.90,0.93,'percent error = '+str(error),fontsize=15,color='red',va='baseline',ha='right',multialignment='left')
+            
+        # set axis labels
+        x_axis_fontsize = 20
+        xintpn.set_xlabel('n',fontsize=x_axis_fontsize)
+    
+        y_axis_fontsize = 20
+        xn.set_ylabel('x[n] \n (w/out interpolation)',fontsize=y_axis_fontsize-7)
+        sincn.set_ylabel('sinc[n]',fontsize=y_axis_fontsize-7)
+        xintpn.set_ylabel('x[n] \n (w/ interpolation)',fontsize=y_axis_fontsize-7)
+    
+        # save figures
+        fig_xn.savefig('interpolation_sinusoid_lengthofsinc_'+str(length)+'.png')
+
 # percent error plot
 fig_percent_error = plt.figure()
 # no interpolation
@@ -112,7 +147,7 @@ x_axis_fontsize = 20
 percent_err.set_xlabel('length of truncated sinc',fontsize=x_axis_fontsize)
     
 y_axis_fontsize = 20
-percent_err.set_ylabel(r'$\%$'+'error',fontsize=y_axis_fontsize)
+percent_err.set_ylabel(r'$\%$'+' error',fontsize=y_axis_fontsize)
     
 # save figures
 fig_percent_error.savefig('interpolation_percent_error.png')
