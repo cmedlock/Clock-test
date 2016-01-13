@@ -95,64 +95,49 @@ def interpolate(x):
     #         using a sinc function for interpolation
 
     if -5 in x:
-        print '   list x has a missing point, downsampling and expanding...'
+        missing_points = []
+        for w in range(len(x)):
+            if x[w]==-5:
+                missing_points.append(w)
+        print '   list x is missing points ',missing_points,', downsampling and expanding...'
         # interpolate to find the missing points
         xintp = [elt for elt in x]
-        missing_point_init = xintp.index(-5)
-        print '   x is missing point ',missing_point_init
-        sinc = []
-        # expand by 2 (insert zeros)
-        # downsample then expand by 2
-        # this code can only handle a single missing point with an odd index
-        expanded = []
-        # if the missing point had an odd index, want to save all of the even samples
-        # if the missing point had an even index, want to save all of the odd samples
-        # do this by appending a zero to the start of the list before downsampling and
-        # expanding it
-        missing_point = missing_point_init
-        if missing_point%2==0:
-            x = np.concatenate((np.array([0]),x))
-            missing_point_oddidx = list(x).index(-5)
-            print '   missing point has been shifted to index ',missing_point_oddidx
-            missing_point = missing_point_oddidx
-        for d in range(len(x)):
-            if d%2==0:
-                expanded.append(x[d])
-            else:
-                expanded.append(0)
-        print x[1:10]
-        print expanded[:10]
-        # windowed sinc filter
-        L = 2
-        n_neg = np.arange(-missing_point,0)
-        n_pos = np.arange(1,len(expanded)-missing_point)
-        sinc_neg = np.sin(np.pi*n_neg/L)/(np.pi*n_neg/L)
-        sinc_pos = np.sin(np.pi*n_pos/L)/(np.pi*n_pos/L)
-        # NB: normally would set sinc[0] equal to 1, but in this
-        # case we don't want the -5 at that point to contribute to
-        # the sum, so just set sinc[0] equal to 0
-        sinc = np.concatenate((sinc_neg,np.array([0]),sinc_pos))
-        # evaluate convolution at missing point
-        missing = np.dot(expanded,sinc)
-        xintp[missing_point_init] = missing
-        return xintp
-    return x
-"""
-        for v in range(len(x)-1):
-            xexpand.append(x[v])
-            if x[v]!=-5 and x[v+1]!=-5:
-                xexpand.append(0)
-        xexpand.append(x[-1])
-        yexpand.append(y[-1])
-        for d in range(len(xexpand)):
-            if xexpand[d]!=-5:
-                continue
-            #print '      found missing point at index ',(d-1)/2
+        for missing_point_init in missing_points:
+            print '   looking for point ',missing_point_init
+            sinc = []
+            # expand by 2 (insert zeros)
+            # downsample then expand by 2
+            # this code can only handle a single missing point with an odd index
+            expanded = []
+            # if the missing point had an even index, want to save all of the odd samples
+            # do this by appending a zero to the start of the list before downsampling and
+            # expanding it
+            missing_point = missing_point_init
+            if missing_point_init%2==0:
+                x_shiftedbyone = [0]+list(x)
+                missing_point_oddidx = x_shiftedbyone.index(-5)
+                print '   missing point has been shifted to index ',missing_point_oddidx
+                missing_point = missing_point_oddidx
+                for d in range(len(x_shiftedbyone)):
+                    xval = x_shiftedbyone[d]
+                    if d%2==0:
+                        expanded.append(xval if xval!=-5 else 0)
+                    else:
+                        expanded.append(0)
+            # if the missing point had an odd index, want to save all of the even samples
+            elif missing_point_init%2==1:
+                for d in range(len(x)):
+                    xval = x[d]
+                    if d%2==0:
+                        expanded.append(xval if xval!=-5 else 0)
+                    else:
+                        expanded.append(0)
+            #print x[1:10]
+            #print expanded[:10]
             # windowed sinc filter
-            #print '         forming windowed sinc filter...'
             L = 2
-            n_neg = np.arange(-d,0)
-            n_pos = np.arange(1,len(xexpand)-d)
+            n_neg = np.arange(-missing_point,0)
+            n_pos = np.arange(1,len(expanded)-missing_point)
             sinc_neg = np.sin(np.pi*n_neg/L)/(np.pi*n_neg/L)
             sinc_pos = np.sin(np.pi*n_pos/L)/(np.pi*n_pos/L)
             # NB: normally would set sinc[0] equal to 1, but in this
@@ -160,22 +145,11 @@ def interpolate(x):
             # the sum, so just set sinc[0] equal to 0
             sinc = np.concatenate((sinc_neg,np.array([0]),sinc_pos))
             # evaluate convolution at missing point
-            missing_x = np.dot(xexpand,sinc)
-            missing_y = np.dot(yexpand,sinc)
-            #print '         missing x is ',missing_x,' and missing y is ',missing_y
-            xexpand[d] = missing_x
-            yexpand[d] = missing_y
-        # downsample by 2 to remove the zeros
-        xintp,yintp = [],[]
-        for v in range(len(xexpand)):
-            if v%2==0:
-                xintp.append(xexpand[v])
-                yintp.append(yexpand[v])
-            elif v%2==1 and xexpand[v]!=0:
-                print '      inserting missing point (',xexpand[v],',',yexpand[v],') at index ',v/2
-                xintp.append(xexpand[v])
-                yintp.append(yexpand[v])
-"""
+            print '*** ',expanded.count(-5)
+            missing = np.dot(expanded,sinc)
+            xintp[missing_point_init] = missing
+        return xintp
+    return x
 
 def linear_interpolate(x):
     # input: x (list) with missing points marked by the value -5

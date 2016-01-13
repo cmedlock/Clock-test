@@ -32,14 +32,15 @@ for fname in dirs[:3]:
     # assume for right now that we are only ever missing 1 point
     
     # for testing purposes, remove a point with an odd index from x_copy
-    #x_copy[1] = -5 # a point on the left
+    #x_copy[5] = -5 # a point on the left
     x_copy[113] = -5 # a point in the middle
+    x_copy[200] = -5
+    #x_copy[93] = -5
     #x_copy[225] = -5 # a point on the right
     
     x_copy = ct.interpolate(x_copy)
+    print x_copy[5]
     #x_command,y_command = ct.linear_interpolate(x_command,y_command)
-    #print '\n',len(x_copy),len(y_copy)
-    #print len(x_command),len(y_command),'\n'
 
     x_copy,y_copy,p_copy,t_copy = np.array(x_copy),np.array(y_copy),np.array(p_copy),np.array(t_copy)
     #x_command,y_command,p_command,t_command = np.array(x_command),np.array(y_command),np.array(p_command),np.array(t_command)
