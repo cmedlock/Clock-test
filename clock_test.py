@@ -98,27 +98,30 @@ def interpolate(x):
         print '   list x has a missing point, downsampling and expanding...'
         # interpolate to find the missing points
         xintp = [elt for elt in x]
-        missing_point = xintp.index(-5)
-        print 'x is missing point ',missing_point
+        missing_point_init = xintp.index(-5)
+        print '   x is missing point ',missing_point_init
         sinc = []
         # expand by 2 (insert zeros)
         # downsample then expand by 2
         # this code can only handle a single missing point with an odd index
         expanded = []
+        # if the missing point had an odd index, want to save all of the even samples
         # if the missing point had an even index, want to save all of the odd samples
         # do this by appending a zero to the start of the list before downsampling and
         # expanding it
+        missing_point = missing_point_init
         if missing_point%2==0:
-            expanded.append(0)
-        # if the missing point had an odd index, want to save all of the even samples
-        elif missing_point%2==1:
-            for d in range(len(x)):
-                if d%2==0:
-                    expanded.append(x[d])
-                else:
-                    expanded.append(0)
-        #print x[:9]
-        #print expanded[:10]
+            x = np.concatenate((np.array([0]),x))
+            missing_point_oddidx = list(x).index(-5)
+            print '   missing point has been shifted to index ',missing_point_oddidx
+            missing_point = missing_point_oddidx
+        for d in range(len(x)):
+            if d%2==0:
+                expanded.append(x[d])
+            else:
+                expanded.append(0)
+        print x[1:10]
+        print expanded[:10]
         # windowed sinc filter
         L = 2
         n_neg = np.arange(-missing_point,0)
@@ -131,7 +134,7 @@ def interpolate(x):
         sinc = np.concatenate((sinc_neg,np.array([0]),sinc_pos))
         # evaluate convolution at missing point
         missing = np.dot(expanded,sinc)
-        xintp[missing_point] = missing
+        xintp[missing_point_init] = missing
         return xintp
     return x
 """
