@@ -93,20 +93,12 @@ for w in range(len(n_neg)):
     #print nval,': ',sinc_neg[w],'   ',math.sin(math.pi/2*nval)/(math.pi/2*nval)
 # evaluate convolution at missing point
 missing = np.dot(expanded,sinc)
-missing = 0
-for d in range(len(expanded)):
-    if expanded[d]!=0:
-        pass
-        #print n[d],'   ',expanded[d],'   ',sinc[d]
-    missing += expanded[d]*sinc[d]
 print 'missing point has value ',missing,' = ',check,' = ',math.sin(math.pi/6*missing_point),' ?'
+xintp[idx_of_missing_point] = missing
+error = abs(missing-math.sin(math.pi/6*missing_point))/math.sin(math.pi/6*missing_point)*100
+print '***percent error for point ',missing_point,' is ',error
+#percent_error.append(error)
 """
-    xintp[idx_of_missing_point] = missing
-    #print x[idx_of_missing_point],xintp[idx_of_missing_point]
-    error = abs(missing-math.sin(math.pi/6*missing_point))/math.sin(math.pi/6*missing_point)*100
-    print '   percent error for point ',missing_point,' is ',error
-    #percent_error.append(error)
-
     # plots
     fig_xn = plt.figure()
     # no interpolation
