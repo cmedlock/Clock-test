@@ -16,8 +16,9 @@ if not os.path.exists(path+'figs_raw'):
 
 # length of truncated sinc (longer = more accurate interpolation)
 # this code only works for even lengths
-lengths = [1000]
+lengths = [10,20,60,100,200,300,400,500,600,700,800,900,1000]
 missing_point = 1
+percent_errors = []
 
 for length in lengths:
     check = 0
@@ -47,7 +48,6 @@ for length in lengths:
     # interpolate to find the missing points
     xintp = [elt for elt in x]
     sinc = []
-    percent_error = -1
     
     # downsample then expand by 2
     # if the missing point had an even index, want to save all of the odd samples
@@ -97,4 +97,24 @@ for length in lengths:
     xintp[idx_of_missing_point] = missing
     error = abs(missing-math.sin(math.pi/6*missing_point))/math.sin(math.pi/6*missing_point)*100
     print '      percent error for point ',missing_point,' is ',error
-    #percent_error.append(error)
+    percent_errors.append(error)
+
+# percent error plot
+fig_percent_error = plt.figure()
+# no interpolation
+percent_err = fig_percent_error.add_subplot(111)
+percent_err.plot(lengths,percent_errors,marker='o')
+percent_err.set_xlim(right=max(lengths)*1.05)
+percent_err.set_ylim(top=max(percent_errors)*1.2)
+    
+# set axis labels
+x_axis_fontsize = 20
+percent_err.set_xlabel('length of truncated sinc',fontsize=x_axis_fontsize)
+    
+y_axis_fontsize = 20
+percent_err.set_ylabel(r'$\%$'+'error',fontsize=y_axis_fontsize)
+    
+# save figures
+fig_percent_error.savefig('interpolation_percent_error.png')
+        
+plt.close('all')
