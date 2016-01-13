@@ -13,18 +13,18 @@ if not os.path.exists(path+'figs_raw'):
     os.makedirs(path+'figs_raw')
 
 # length of truncated sinc (longer = more accurate interpolation)
-#lengths = [20,25,30,35,40,45]
-lengths = [80]
-missing_points = [43]
+# this code only works for even lengths
+lengths = [80,160]
+missing_points = [5]
 
 for length in lengths:
     # original signal, appropriately bandlimited so that
     # it can be downsampled by 2 with no aliasing,
     # i.e. X(e^jw)=0 for |w|>= pi/2
-    n = np.arange(-(length+length%2)/2,(length+length%2)/2)
+    n = np.arange(-length/2,length/2)
     x = np.sin(np.pi/6*n)
     # 'CT signal
-    ntrue = np.linspace(-(length+length%2)/2,(length+length%2)/2,length*5)
+    ntrue = np.linspace(-length/2,length/2,length*5)
     xtrue = np.sin(np.pi/6*ntrue)
     # remove some points
     for idx in missing_points:
@@ -68,9 +68,9 @@ for length in lengths:
         for v in range(len(expanded)):
             if expanded[v]!=-5:
                 missing += expanded[v]*sinc[v]
-        print '         missing point has value ',missing,' = ',math.sin(math.pi/6*(point-40)),' ?'
+        print '         missing point has value ',missing,' = ',math.sin(math.pi/6*(point-length/2)),' ?'
         xintp[point] = missing
-        error = abs(missing-math.sin(math.pi/6*(point-40)))/math.sin(math.pi/6*(point-40))*100
+        error = abs(missing-math.sin(math.pi/6*(point-40)))/math.sin(math.pi/6*(point-length/2))*100
         print 'percent error for point ',point,' is ',error
         percent_error.append(error)
 
@@ -106,7 +106,5 @@ for length in lengths:
     
     # save figures
     fig_xn.savefig('interpolation_sinusoid_lengthofsinc_'+str(length)+'.png')
-    
-    print '\n'
-    
+        
 plt.close('all')
