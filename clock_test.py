@@ -187,26 +187,28 @@ def deriv_doublederiv(x,y,t):
         ay.append(a_y)
     return vx,vy,ax,ay
 
-def draw_clock(x,y,name,fname,path):
+def draw_clock(x,y,xname,yname,name,fname,path):
     # input: x[t],y[t],t,x- and y-axis labels
     #        fname,path in order to save the figure and video
     # output: xy_name_fname.png with plot of circle,
 
     # figures
     fig_xy = plt.figure()
-    xy = fig_xy.add_subplot(111,aspect=1.0)
+    xy = fig_xy.add_subplot(111)
     xy.plot(x,y)
 
-    # equalize axis scales
-    if max(x)-min(x)>max(y)-min(y):
-        ax_range = max(x)-min(x)+20
-        xy.set_xlim(min(x)-10,max(x)+10)
-        xy.set_ylim(min(y)-10,min(y)+ax_range)
-    else:
-        ax_range = max(y)-min(y)+20
-        xy.set_xlim(min(x)-10,min(x)+ax_range)
-        xy.set_ylim(min(y)-10,max(y)+10)
-    plt.axis('equal')
+    # equalize axis scales for the clock drawings (not the pressure plots)
+    if xname=='x' and yname=='y':
+        xy.set_aspect(1.0)
+        if max(x)-min(x)>max(y)-min(y):
+            ax_range = max(x)-min(x)+20
+            xy.set_xlim(min(x)-10,max(x)+10)
+            xy.set_ylim(min(y)-10,min(y)+ax_range)
+        else:
+            ax_range = max(y)-min(y)+20
+            xy.set_xlim(min(x)-10,min(x)+ax_range)
+            xy.set_ylim(min(y)-10,max(y)+10)
+        plt.axis('equal')
     
     # set titles and file labels
     title_fontsize = 20
@@ -225,10 +227,10 @@ def draw_clock(x,y,name,fname,path):
 
     # set axis labels
     x_axis_fontsize = 20
-    xy.set_xlabel('x',fontsize=x_axis_fontsize)
+    xy.set_xlabel(xname,fontsize=x_axis_fontsize)
 
     y_axis_fontsize = 20
-    xy.set_ylabel('y',fontsize=y_axis_fontsize)
+    xy.set_ylabel(yname,fontsize=y_axis_fontsize)
 
     # save figures
     fig_xy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/'+name+'_'+fname[:len(fname)-4]+'.png')
@@ -250,7 +252,7 @@ def plot_xyt_other(x,t,xname,tname,otherx,w,otherxname,wname,logplot,othername,f
     linecolor_other = 'red'
     otherxw.plot(w,otherx,linecolor_other)
     if logplot:
-        otherxw.set_ylim(bottom=min(other[1:])/10,top=max(other)*10)
+        otherxw.set_ylim(bottom=min(otherx[1:])/10,top=max(otherx)*10)
         otherxw.set_yscale('log')
 
     # set titles and file labels
