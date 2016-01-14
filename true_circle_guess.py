@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import math
 import matplotlib
 import matplotlib.pyplot as plt
@@ -5,13 +6,15 @@ import numpy as np
 import os
 from pylab import *
 
+# the circles are way off and don’t look helpful at all
+
 path = '/Users/cmedlock/Documents/DSP_UROP/all_data/'
 dirs = os.listdir(path)
 
 if not os.path.exists(path+'figs_raw'):
     os.makedirs(path+'figs_raw')
 
-for fname in dirs:
+for fname in dirs[:3]:
     if 'Scored' not in fname:
         continue
     print 'reading file ',fname,'...'
@@ -63,8 +66,6 @@ for fname in dirs:
         # position and time
         xcoord = double(line[3])
         ycoord = double(line[1])
-        if xcoord==0 or ycoord==0:
-            print 'origin'
         timestamp = double(line[7])
         if clock_type=='COPY':
             x_copy.append(xcoord)
@@ -86,23 +87,33 @@ for fname in dirs:
     xcenter_copy,ycenter_copy = np.mean(x_copy),np.mean(y_copy)
     total_dist = 0
     for w in range(len(x_copy)):
-        dist_from_center = math.sqrt((x_copy-xcenter_copy)**2+(y_copy-ycenter_copy)**2)
+        dist_from_center = math.sqrt((x_copy[w]-xcenter_copy)**2+(y_copy[w]-ycenter_copy)**2)
         total_dist += dist_from_center
     avg_dist_from_center = total_dist/len(x_copy)
     radius_copy = avg_dist_from_center
+    angles = np.linspace(0,2*math.pi,250)
+    xtrue_copy = radius_copy*np.cos(angles)+xcenter_copy
+    ytrue_copy = radius_copy*np.sin(angles)+ycenter_copy
+    print 'copy clock: radius = ',radius_copy,', center = (',xcenter_copy,',',ycenter_copy,')'
+    print xtrue_copy[:5]
     
     xcenter_command,ycenter_command = np.mean(x_command),np.mean(y_command)
     total_dist = 0
     for w in range(len(x_command)):
-        dist_from_center = math.sqrt((x_command-xcenter_command)**2+(y_command-ycenter_command)**2)
+        dist_from_center = math.sqrt((x_command[w]-xcenter_command)**2+(y_command[w]-ycenter_command)**2)
         total_dist += dist_from_center
     avg_dist_from_center = total_dist/len(x_command)
     radius_command = avg_dist_from_center
-    
+    xtrue_command = radius_command*np.cos(angles)+xcenter_command
+    ytrue_command = radius_command*np.sin(angles)+ycenter_command
+    print 'command clock: radius = ',radius_command,', center = (',xcenter_command,',',ycenter_command,')'
+    print ytrue_copy[:5]
+
     # copy clocks
     fig_xy_copy = plt.figure()
     xy_copy = fig_xy_copy.add_subplot(111,aspect=1.0)
     xy_copy.plot(x_copy,y_copy)
+    xy_copy.plot(xtrue_copy,ytrue_copy,'--')
 
     # equalize axis scales
     if max(x_copy)-min(x_copy)>max(y_copy)-min(y_copy):
@@ -142,6 +153,7 @@ for fname in dirs:
     fig_xy_command = plt.figure()
     xy_command = fig_xy_command.add_subplot(111,aspect=1.0)
     xy_command.plot(x_command,y_command)
+    xy_command.plot(xtrue_command,ytrue_command,'--')
 
     # equalize axis scales
     if max(x_command)-min(x_command)>max(y_command)-min(y_command):
