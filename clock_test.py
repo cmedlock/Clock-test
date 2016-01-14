@@ -99,11 +99,11 @@ def interpolate(x):
         for w in range(len(x)):
             if x[w]==-5:
                 missing_points.append(w)
-        print '   list x is missing points ',missing_points,', downsampling and expanding...'
+        #print '   list x is missing points ',missing_points,', downsampling and expanding...'
         # interpolate to find the missing points
         xintp = [elt for elt in x]
         for missing_point_init in missing_points:
-            print '   looking for point ',missing_point_init
+            #print '   looking for point ',missing_point_init
             sinc = []
             # expand by 2 (insert zeros)
             # downsample then expand by 2
@@ -116,7 +116,7 @@ def interpolate(x):
             if missing_point_init%2==0:
                 x_shiftedbyone = [0]+list(x)
                 missing_point_oddidx = x_shiftedbyone.index(-5)
-                print '   missing point has been shifted to index ',missing_point_oddidx
+                #print '   missing point has been shifted to index ',missing_point_oddidx
                 missing_point = missing_point_oddidx
                 for d in range(len(x_shiftedbyone)):
                     xval = x_shiftedbyone[d]
@@ -145,7 +145,7 @@ def interpolate(x):
             # the sum, so just set sinc[0] equal to 0
             sinc = np.concatenate((sinc_neg,np.array([0]),sinc_pos))
             # evaluate convolution at missing point
-            print '*** ',expanded.count(-5)
+            #print '*** ',expanded.count(-5)
             missing = np.dot(expanded,sinc)
             xintp[missing_point_init] = missing
         return xintp
@@ -190,7 +190,7 @@ def deriv_doublederiv(x,y,t):
 def draw_clock(x,y,xname,yname,name,fname,path):
     # input: x[t],y[t],t,x- and y-axis labels
     #        fname,path in order to save the figure and video
-    # output: xy_name_fname.png with plot of circle,
+    # output: xy_name_fname.png with plot of circle
 
     # figures
     fig_xy = plt.figure()
@@ -285,6 +285,58 @@ def plot_xyt_other(x,t,xname,tname,otherx,w,otherxname,wname,logplot,othername,f
     
     # save figures
     fig_xt.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/'+othername+'_'+fname[:len(fname)-4]+'.png')
+    
+    plt.close('all')
+
+def find_relsidelobe_amplitude(dft):
+    # input: dft (list) = |X[k]| for the positive frequences for a real signal x[n]
+    # output: rel_sidelobe_amplitude = relative side lobe amplitude of dft in dB
+    abs_dft = np.abs(dft)[:len(dft)/2] # restrict to only the positive frequencies
+    peak_amplitude,sidelobe_amplitude = 0,0
+    for w in range(1,len(abs_dft)-1):
+        if abs_dft[w]-abs_dft[w-1]>0 and abs_dft[w]-abs_dft[w+1]>0:
+            if peak_amplitude==0:
+                peak_amplitude = abs_dft[w]
+            elif peak_amplitude!=0 and sidelobe_amplitude==0:
+                sidelobe_amplitude = abs_dft[w]
+        if peak_amplitude!=0 and sidelobe_amplitude!=0:
+            break
+    relsidelobe_amplitude = 20*math.log10(peak_amplitude/sidelobe_amplitude)
+    return relsidelobe_amplitude
+
+def get_bins(a,nbins):
+    # input: a (list of tuples): [('healthy',...),('impaired',...)...]
+    #       want to find appropriate bin edges so that can make a
+    #       histogram of the healthy vs. the impaired with equal bin widths
+    # output: binedges (list of tuples with the bin edges)
+    healthy = [elt[1] for elt in a if elt[0]=='healthy']
+    impaired = [elt[1] for elt in a if elt[0]=='impaired']
+    binedges = np.histogram(np.hstack((healthy,impaired)),bins=10)[1]
+    return binedges
+    
+def make_hist(healthy,impaired,binedges,nameforplot,nameforfile,path):
+    # input: healthy,impaired (lists): lists of quantity to be compared
+    #        name,fname,path: in order to save the figure
+    # output: compare_name.png with histogram comparing healthy value to
+    #         impaired values
+    
+    fig_hist = plt.figure()
+    hist = fig_hist.add_subplot(111)
+    n1,bins1,patches1 = hist.hist(healthy,bins=binedges,alpha=0.5,normed=True,label='Healthy')
+    n2,bins2,patches2 = hist.hist(impaired,bins=binedges,alpha=0.5,normed=True,label='Impaired')
+    hist.set_ylim(top=max(max(n1),max(n2))*1.2)
+    hist.legend(loc='best',frameon=False)
+    
+    # set titles and file labels
+    title_fontsize = 15
+    hist.set_title(nameforplot+': Healthy vs. Impaired',fontsize=title_fontsize)
+
+    # set axis label
+    x_axis_fontsize = 15
+    hist.set_xlabel(nameforplot,fontsize=x_axis_fontsize)
+
+    # save figure
+    fig_hist.savefig(path+'/compare_healthy_impaired/compare_'+nameforfile+'.png')
     
     plt.close('all')
     
