@@ -1,3 +1,5 @@
+# plot DFT coefficients of each x vs. t and y vs. t signal
+
 import math
 import matplotlib
 import matplotlib.pyplot as plt
@@ -6,16 +8,31 @@ import numpy.fft
 import os
 from pylab import *
 
+import clock_test as ct
+ct = reload(ct)
+
 path = '/Users/cmedlock/Documents/DSP_UROP/all_data/'
 dirs = os.listdir(path)
 
 if not os.path.exists(path+'figs_raw'):
     os.makedirs(path+'figs_raw')
 
-for fname in dirs:
+# save interesting quantities
+energy_in_peak_copy,energy_in_peak_command = [],[]
+
+for fname in dirs[:3]:
     if 'Scored' not in fname:
         continue
     print 'reading file ',fname,'...'
+    
+    ftype = ''
+    if 'YDU' in fname:
+        ftype = 'healthy'
+    elif 'CIN' in fname:
+        ftype = 'impaired'
+    else:
+        print 'not a valid file name'
+
     f = open(path+fname)
     data = f.readlines()
 
@@ -86,11 +103,20 @@ for fname in dirs:
     x_command_zm,y_command_zm = x_command-mean(x_command),y_command-mean(y_command)
     
     # dft's
-    dft_size = 750
-    dftx_copy,dfty_copy = np.fft.fft(x_copy_zm,n=dft_size),np.fft.fft(y_copy_zm,n=dft_size)
-    dftx_command,dfty_command = np.fft.fft(x_command_zm,n=dft_size),np.fft.fft(y_command_zm,n=dft_size)
-    k = np.arange(dft_size)
-    freq = 2*np.pi/dft_size*k
+    dft_size_copy,dft_size_command = len(x_copy),len(x_command)
+    dftx_copy,dfty_copy = np.fft.fft(x_copy_zm,n=dft_size_copy),np.fft.fft(y_copy_zm,n=dft_size_copy)
+    dftx_command,dfty_command = np.fft.fft(x_command_zm,n=dft_size_command),np.fft.fft(y_command_zm,n=dft_size_command)
+    k_copy = np.arange(dft_size_copy)
+    k_command = np.arange(dft_size_command)
+    
+    # only use the positive frequencies
+    dftx_posfreq_copy = dftx_copy[:dft_size_copy/2+1] if dft_size_copy%2==0 else dftx_copy[:math.ceil(dft_size_copy/2)]
+    dfty_posfreq_copy = dfty_copy[:dft_size_copy/2+1] if dft_size_copy%2==0 else dfty_copy[:math.ceil(dft_size_copy/2)]
+    dftx_posfreq_command = dftx_command[:dft_size_command/2+1] if dft_size_command%2==0 else dftx_command[:math.ceil(dft_size_command/2)]
+    dfty_posfreq_command = dfty_command[:dft_size_command/2+1] if dft_size_command%2==0 else dfty_command[:math.ceil(dft_size_command/2)]
+    posfreq_copy = k_copy[:dft_size_copy/2+1] if dft_size_copy%2==0 else k_copy[:math.ceil(dft_size_copy/2)]
+    posfreq_command = k_command[:dft_size_command/2+1] if dft_size_command%2==0 else k_command[:math.ceil(dft_size_command/2)]
+    #freq = 2*np.pi/dft_size*k
     #freq = np.fft.fftfreq(n=1024,d=1/(2*np.pi)) # NB: centered around 0
     
     # copy clocks
@@ -103,13 +129,19 @@ for fname in dirs:
     
     dftxk_copy,dftyk_copy = fig_xt_copy.add_subplot(212),fig_yt_copy.add_subplot(212)    
     linecolor_dft = 'red'
-    dftxk_copy.plot(k[:dft_size/2],np.abs(dftx_copy)[:dft_size/2],linecolor_dft)
-    dftyk_copy.plot(k[:dft_size/2],np.abs(dfty_copy)[:dft_size/2],linecolor_dft)
-    dftxk_copy.set_ylim(bottom=min(np.abs(dftx_copy[1:]))/10,top=max(np.abs(dftx_copy))*10)
-    dftyk_copy.set_ylim(bottom=min(np.abs(dfty_copy[1:]))/10,top=max(np.abs(dfty_copy))*10)
+    dftxk_copy.plot(posfreq_copy,np.abs(dftx_posfreq_copy),linecolor_dft)
+    dftyk_copy.plot(posfreq_copy,np.abs(dfty_posfreq_copy),linecolor_dft)
+    dftxk_copy.set_ylim(bottom=min(np.abs(dftx_posfreq_copy[1:]))/10,top=max(np.abs(dftx_copy))*10)
+    dftyk_copy.set_ylim(bottom=min(np.abs(dfty_posfreq_copy[1:]))/10,top=max(np.abs(dfty_copy))*10)
     dftxk_copy.set_yscale('log')
     dftyk_copy.set_yscale('log')
 
+    # set axis limits
+    xt_copy.set_xlim(right=max(t_copy-t_copy[0]))
+    yt_copy.set_xlim(right=max(t_copy-t_copy[0]))
+    dftxk_copy.set_xlim(right=posfreq_copy[-1])
+    dftyk_copy.set_xlim(right=posfreq_copy[-1])
+    
     # set titles and file labels
     title_fontsize = 20
     #xt_copy.set_title('Sample Copy Clock',fontsize=title_fontsize)
@@ -165,12 +197,18 @@ for fname in dirs:
 
     dftxk_command,dftyk_command = fig_xt_command.add_subplot(212),fig_yt_command.add_subplot(212)    
     linecolor_dft = 'red'
-    dftxk_command.plot(k[:dft_size/2],np.abs(dftx_command)[:dft_size/2],linecolor_dft)
-    dftyk_command.plot(k[:dft_size/2],np.abs(dfty_command)[:dft_size/2],linecolor_dft)
-    dftxk_command.set_ylim(bottom=min(np.abs(dftx_command[1:]))/10,top=max(np.abs(dftx_command))*10)
-    dftyk_command.set_ylim(bottom=min(np.abs(dfty_command[1:]))/10,top=max(np.abs(dfty_command))*10)
+    dftxk_command.plot(posfreq_command,np.abs(dftx_posfreq_command),linecolor_dft)
+    dftyk_command.plot(posfreq_command,np.abs(dfty_posfreq_command),linecolor_dft)
+    dftxk_command.set_ylim(bottom=min(np.abs(dftx_posfreq_command[1:]))/10,top=max(np.abs(dftx_command))*10)
+    dftyk_command.set_ylim(bottom=min(np.abs(dfty_posfreq_command[1:]))/10,top=max(np.abs(dfty_command))*10)
     dftxk_command.set_yscale('log')
     dftyk_command.set_yscale('log')
+
+    # set axis limits
+    xt_command.set_xlim(right=max(t_command-t_command[0]))
+    yt_command.set_xlim(right=max(t_command-t_command[0]))
+    dftxk_command.set_xlim(right=posfreq_command[-1])
+    dftyk_command.set_xlim(right=posfreq_command[-1])
 
     # set titles and file labels
     #xt_command.set_title('Sample Command Clock',fontsize=title_fontsize)
@@ -214,4 +252,13 @@ for fname in dirs:
     fig_yt_command.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/dfty_command_'+fname[:len(fname)-4]+'.png')
 
     plt.close('all')
-    
+
+# compare percent energy in peak for the drawings of healthy vs. impaired patients
+#binedges = ct.get_bins(energy_in_peak_copy,nbins=10)
+#ct.make_hist([elt[1] for elt in energy_in_peak_copy if elt[0]=='healthy'],
+             #[elt[1] for elt in energy_in_peak_copy if elt[0]=='impaired'],
+             #binedges,'Percent Energy in Largest DFS Coefficient','energy_in_peak_copy',path)
+#binedges = ct.get_bins(energy_in_peak_command,nbins=10)
+#ct.make_hist([elt[1] for elt in energy_in_peak_command if elt[0]=='healthy'],
+             #[elt[1] for elt in energy_in_peak_command if elt[0]=='impaired'],
+             #binedges,'Percent Energy in Largest DFS Coefficient','energy_in_peak_command',path)
