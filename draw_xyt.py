@@ -131,8 +131,8 @@ for fname in dirs:
     fig_xy_copy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/xy_copy_'+fname[:len(fname)-4]+'.png')
 
     # command clocks
-    fig_xt_command,fig_yt_command,fig_xy_command = plt.figure(),plt.figure(),plt.figure()
-    xt_command,yt_command,xy_command = fig_xt_command.add_subplot(111),fig_yt_command.add_subplot(111),fig_xy_command.add_subplot(111,aspect=1.0)
+    fig_xyt_command,fig_xy_command = plt.figure(),plt.figure()
+    xt_command,yt_command,xy_command = fig_xyt_command.add_subplot(211),fig_xyt_command.add_subplot(212),fig_xy_command.add_subplot(111,aspect=1.0)
     xt_command.plot(t_command-t_command[0],x_command)
     yt_command.plot(t_command-t_command[0],y_command)
     xy_command.plot(x_command,y_command)
@@ -153,23 +153,19 @@ for fname in dirs:
     #yt_command.set_title('Sample Command Clock',fontsize=title_fontsize)
     #xy_command.set_title('Sample Command Clock',fontsize=title_fontsize)
 
-    fig_xt_command.text(0.99, 0.96, fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
-    fig_yt_command.text(0.99, 0.96, fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
+    fig_xyt_command.text(0.99, 0.96, fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
     fig_xy_command.text(0.99, 0.96, fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
 
     if 'YDU' in fname:
-        fig_xt_command.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
-        fig_yt_command.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_xyt_command.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
         fig_xy_command.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
     elif 'CIN' in fname:
-        fig_xt_command.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
-        fig_yt_command.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_xyt_command.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
         fig_xy_command.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
     else:
         print 'not a valid filename'
 
     # set axis labels
-    xt_command.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
     yt_command.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
     xy_command.set_xlabel('x',fontsize=x_axis_fontsize)
 
@@ -178,8 +174,7 @@ for fname in dirs:
     xy_command.set_ylabel('y',fontsize=y_axis_fontsize)
 
     # save figures
-    fig_xt_command.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/xt_command_'+fname[:len(fname)-4]+'.png')
-    fig_yt_command.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/yt_command_'+fname[:len(fname)-4]+'.png')
+    fig_xyt_command.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/xyt_command_'+fname[:len(fname)-4]+'.png')
     fig_xy_command.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/xy_command_'+fname[:len(fname)-4]+'.png')
 
     plt.close('all')
