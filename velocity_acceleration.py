@@ -116,15 +116,23 @@ for fname in dirs:
     yt_copy.plot(t_copy-t_copy[0],y_copy)
 
     vxt_copy,vyt_copy = fig_xt_copy.add_subplot(212),fig_yt_copy.add_subplot(212)    
-    marker_size,marker_edgecolor_v,linecolor_v = 5,'darkred','red'
-    vxt_copy.plot(t_copy[1:]-t_copy[0],vx_copy,linecolor_v,markersize=marker_size)#,markeredgecolor=marker_edgecolor_v)
-    vyt_copy.plot(t_copy[1:]-t_copy[0],vy_copy,linecolor_v,markersize=marker_size)#,markeredgecolor=marker_edgecolor_v)
+    marker_size,marker_edgecolor_v,linecolor_v,linestyle_v,linewidth_v = 5,'darkred','black','k--',2.0
+    vxt_copy.plot(t_copy[1:]-t_copy[0],vx_copy,linestyle_v,lw=linewidth_v,markersize=marker_size)#,markeredgecolor=marker_edgecolor_v)
+    vyt_copy.plot(t_copy[1:]-t_copy[0],vy_copy,linestyle_v,lw=linewidth_v,markersize=marker_size)#,markeredgecolor=marker_edgecolor_v)
 
     axt_copy,ayt_copy = vxt_copy.twinx(),vyt_copy.twinx()
-    marker_edgecolor_a,linecolor_a = 'darkgreen','green'
-    axt_copy.plot(t_copy[2:]-t_copy[0],ax_copy,linecolor_a,markersize=marker_size)#,markeredgecolor=marker_edgecolor_a)
-    ayt_copy.plot(t_copy[2:]-t_copy[0],ay_copy,linecolor_a,markersize=marker_size)#,markeredgecolor=marker_edgecolor_a)
-    
+    marker_edgecolor_a,linecolor_a,linewidth_a = 'darkgreen','green',1.5
+    axt_copy.plot(t_copy[2:]-t_copy[0],ax_copy,linecolor_a,lw=linewidth_a,markersize=marker_size)#,markeredgecolor=marker_edgecolor_a)
+    ayt_copy.plot(t_copy[2:]-t_copy[0],ay_copy,linecolor_a,lw=linewidth_a,markersize=marker_size)#,markeredgecolor=marker_edgecolor_a)
+
+    # set axis limits
+    xt_copy.set_xlim(right=max(t_copy-t_copy[0]))
+    yt_copy.set_xlim(right=max(t_copy-t_copy[0]))
+    vxt_copy.set_xlim(right=max(t_copy-t_copy[0]))
+    vyt_copy.set_xlim(right=max(t_copy-t_copy[0]))
+    axt_copy.set_xlim(right=max(t_copy-t_copy[0]))
+    ayt_copy.set_xlim(right=max(t_copy-t_copy[0]))
+        
     # set titles and file labels
     title_fontsize = 20
     #xt_copy.set_title('Sample Copy Clock',fontsize=title_fontsize)
@@ -184,13 +192,21 @@ for fname in dirs:
     yt_command.plot(t_command-t_command[0],y_command)
 
     vxt_command,vyt_command = fig_xt_command.add_subplot(212),fig_yt_command.add_subplot(212)
-    vxt_command.plot(t_command[1:]-t_command[0],vx_command,linecolor_v,markersize=marker_size)#,markeredgecolor=marker_edgecolor_v)
-    vyt_command.plot(t_command[1:]-t_command[0],vy_command,linecolor_v,markersize=marker_size)#,markeredgecolor=marker_edgecolor_v)
+    vxt_command.plot(t_command[1:]-t_command[0],vx_command,linestyle_v,lw=linewidth_v,markersize=marker_size)#,markeredgecolor=marker_edgecolor_v)
+    vyt_command.plot(t_command[1:]-t_command[0],vy_command,linestyle_v,lw=linewidth_v,markersize=marker_size)#,markeredgecolor=marker_edgecolor_v)
 
     axt_command,ayt_command = vxt_command.twinx(),vyt_command.twinx()
-    axt_command.plot(t_command[2:]-t_command[0],ax_command,linecolor_a,markersize=marker_size)#,markeredgecolor=marker_edgecolor_a)
-    ayt_command.plot(t_command[2:]-t_command[0],ay_command,linecolor_a,markersize=marker_size)#,markeredgecolor=marker_edgecolor_a)
+    axt_command.plot(t_command[2:]-t_command[0],ax_command,linecolor_a,lw=linewidth_a,markersize=marker_size)#,markeredgecolor=marker_edgecolor_a)
+    ayt_command.plot(t_command[2:]-t_command[0],ay_command,linecolor_a,lw=linewidth_a,markersize=marker_size)#,markeredgecolor=marker_edgecolor_a)
 
+    # set axis limits
+    xt_command.set_xlim(right=max(t_command-t_command[0]))
+    yt_command.set_xlim(right=max(t_command-t_command[0]))
+    vxt_command.set_xlim(right=max(t_command-t_command[0]))
+    vyt_command.set_xlim(right=max(t_command-t_command[0]))
+    axt_command.set_xlim(right=max(t_command-t_command[0]))
+    ayt_command.set_xlim(right=max(t_command-t_command[0]))
+    
     # set titles and file labels
     #xt_command.set_title('Sample Command Clock',fontsize=title_fontsize)
     #yt_command.set_title('Sample Command Clock',fontsize=title_fontsize)
