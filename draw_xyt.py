@@ -81,8 +81,8 @@ for fname in dirs:
     x_command,y_command,t_command = np.array(x_command),np.array(y_command),np.array(t_command)
 
     # copy clocks
-    fig_xt_copy,fig_yt_copy,fig_xy_copy = plt.figure(),plt.figure(),plt.figure()
-    xt_copy,yt_copy,xy_copy = fig_xt_copy.add_subplot(111),fig_yt_copy.add_subplot(111),fig_xy_copy.add_subplot(111,aspect=1.0)
+    fig_xyt_copy,fig_xy_copy = plt.figure(),plt.figure()
+    xt_copy,yt_copy,xy_copy = fig_xyt_copy.add_subplot(211),fig_xyt_copy.add_subplot(212),fig_xy_copy.add_subplot(111,aspect=1.0)
     xt_copy.plot(t_copy-t_copy[0],x_copy)
     yt_copy.plot(t_copy-t_copy[0],y_copy)
     xy_copy.plot(x_copy,y_copy)
@@ -104,13 +104,20 @@ for fname in dirs:
     #yt_copy.set_title('Sample Copy Clock',fontsize=title_fontsize)
     #xy_copy.set_title('Sample Copy Clock',fontsize=title_fontsize)
 
-    fig_xt_copy.text(0.99, 0.96, fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
-    fig_yt_copy.text(0.99, 0.96, fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
+    fig_xyt_copy.text(0.99, 0.96, fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
     fig_xy_copy.text(0.99, 0.96, fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
+
+    if 'YDU' in fname:
+        fig_xyt_copy.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_xy_copy.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+    elif 'CIN' in fname:
+        fig_xyt_copy.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_xy_copy.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+    else:
+        print 'not a valid filename'
 
     # set axis labels
     x_axis_fontsize = 20
-    xt_copy.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
     yt_copy.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
     xy_copy.set_xlabel('x',fontsize=x_axis_fontsize)
 
@@ -120,8 +127,7 @@ for fname in dirs:
     xy_copy.set_ylabel('y',fontsize=y_axis_fontsize)
 
     # save figures
-    fig_xt_copy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/xt_copy_'+fname[:len(fname)-4]+'.png')
-    fig_yt_copy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/yt_copy_'+fname[:len(fname)-4]+'.png')
+    fig_xyt_copy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/xyt_copy_'+fname[:len(fname)-4]+'.png')
     fig_xy_copy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/xy_copy_'+fname[:len(fname)-4]+'.png')
 
     # command clocks
@@ -150,6 +156,17 @@ for fname in dirs:
     fig_xt_command.text(0.99, 0.96, fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
     fig_yt_command.text(0.99, 0.96, fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
     fig_xy_command.text(0.99, 0.96, fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
+
+    if 'YDU' in fname:
+        fig_xt_command.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_yt_command.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_xy_command.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+    elif 'CIN' in fname:
+        fig_xt_command.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_yt_command.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_xy_command.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+    else:
+        print 'not a valid filename'
 
     # set axis labels
     xt_command.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
