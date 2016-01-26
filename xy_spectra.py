@@ -1,4 +1,4 @@
-# plot DFT coefficients of each x vs. t and y vs. t signal
+# plot DFS coefficients of each x vs. t and y vs. t signal
 
 import math
 import matplotlib
@@ -20,7 +20,7 @@ if not os.path.exists(path+'figs_raw'):
 # save interesting quantities
 energy_in_peak_copy,energy_in_peak_command = [],[]
 
-for fname in dirs[:3]:
+for fname in dirs:
     if 'Scored' not in fname:
         continue
     print 'reading file ',fname,'...'
@@ -109,13 +109,23 @@ for fname in dirs[:3]:
     k_copy = np.arange(dft_size_copy)
     k_command = np.arange(dft_size_command)
     
+    # k_near_pi is the k value for which w_k = 2*pi*k/N is closest to,
+    # but not larger than, pi
+    k_near_pi_copy,k_near_pi_command = 0,0
+    if dft_size_copy%2==0:
+        k_near_pi_copy = dft_size_copy/2+1
+    else:
+        k_near_pi_copy = math.ceil(dft_size_copy/2)
+    if dft_size_command%2==0:
+        k_near_pi_command = dft_size_command/2+1
+    else:
+        k_near_pi_command = math.ceil(dft_size_command/2)
+
     # only use the positive frequencies
-    dftx_posfreq_copy = dftx_copy[:dft_size_copy/2+1] if dft_size_copy%2==0 else dftx_copy[:math.ceil(dft_size_copy/2)]
-    dfty_posfreq_copy = dfty_copy[:dft_size_copy/2+1] if dft_size_copy%2==0 else dfty_copy[:math.ceil(dft_size_copy/2)]
-    dftx_posfreq_command = dftx_command[:dft_size_command/2+1] if dft_size_command%2==0 else dftx_command[:math.ceil(dft_size_command/2)]
-    dfty_posfreq_command = dfty_command[:dft_size_command/2+1] if dft_size_command%2==0 else dfty_command[:math.ceil(dft_size_command/2)]
-    posfreq_copy = k_copy[:dft_size_copy/2+1] if dft_size_copy%2==0 else k_copy[:math.ceil(dft_size_copy/2)]
-    posfreq_command = k_command[:dft_size_command/2+1] if dft_size_command%2==0 else k_command[:math.ceil(dft_size_command/2)]
+    posfreq_copy = k_copy[:k_near_pi_copy]
+    posfreq_command = k_command[:k_near_pi_command]
+    dftx_posfreq_copy,dfty_posfreq_copy = dftx_copy[:k_near_pi_copy],dfty_copy[:k_near_pi_copy]
+    dftx_posfreq_command,dfty_posfreq_command = dftx_command[:k_near_pi_command],dfty_command[:k_near_pi_command]
     #freq = 2*np.pi/dft_size*k
     #freq = np.fft.fftfreq(n=1024,d=1/(2*np.pi)) # NB: centered around 0
     
