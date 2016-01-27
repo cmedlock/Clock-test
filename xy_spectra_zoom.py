@@ -143,18 +143,19 @@ for fname in dirs[:3]:
         
     # convolve (truncated) sinc with x[n]
     omega_c = math.pi/8
-    length_of_sinc = 201
+    length_of_sinc = 1001
     # copy clocks
     x1_copy,y1_copy = [],[]
-    for n in range(len(x_copy)+length_of_sinc-1):
+    for n in range(len(x_copy_zm)+length_of_sinc-1):
         x1_of_n,y1_of_n = 0,0
-        for m in range(len(x_copy)):
-            x1_of_n += x_copy[m]*sinc(omega_c,n-100-m,length_of_sinc)
-            y1_of_n += y_copy[m]*sinc(omega_c,n-100-m,length_of_sinc)
+        for m in range(len(x_copy_zm)):
+            x1_of_n += x_copy_zm[m]*sinc(omega_c,n-(length_of_sinc-1)/2-m,length_of_sinc)
+            y1_of_n += y_copy_zm[m]*sinc(omega_c,n-(length_of_sinc-1)/2-m,length_of_sinc)
         x1_copy.append(x1_of_n)
         y1_copy.append(y1_of_n)
-    #print 'len(x_copy) = ',len(x_copy),', len(sinc) = ',length_of_sinc,', and len(x1_copy) = ',len(x1_copy)
-    #print x_copy[0]*sinc(omega_c,100,length_of_sinc),x1_copy[0]
+    # check dft of x1
+    dftx1_copy = np.fft.fft(x1_copy,n=len(x1_copy))
+    print 'check for x1: ',sum(x1_copy),' = ',dftx1_copy[0],' = ',8*dftx_copy[0],'?'
     # command clocks
     x1_command,y1_command = [],[]
     for n in range(len(x_command)+length_of_sinc-1):
@@ -165,32 +166,31 @@ for fname in dirs[:3]:
         x1_command.append(x1_of_n)
         y1_command.append(y1_of_n)
     
-    # downsample by 8
+    # downsample by 8 (d = decimated)
     # copy clocks
-    for w in range(len(x1_copy)-1):
-        x1_copy = np.insert(x1_copy,w*8+1,[0]*7)
-        y1_copy = np.insert(y1_copy,w*8+1,[0]*7)
-    #print x1_copy[:17]
+    x1_d_copy,y1_d_copy = [],[]
+    for w in range(len(x1_copy)):
+        if w%8==0:
+            x1_d_copy.append(x1_copy[w])
+            y1_d_copy.append(y1_copy[w])
     # command clocks
+    x1_d_command,y1_d_command = [],[]
     for d in range(len(x1_command)-1):
-        x1_command = np.insert(x1_command,d*8+1,[0]*7)
-        y1_command = np.insert(y1_command,d*8+1,[0]*7)
+        if d%8==0:
+            x1_d_command.append(x1_command[d])
+            y1_d_command.append(y1_command[d])
     
-    x1_copy,y1_copy = np.array(x1_copy),np.array(y1_copy)
-    x1_command,y1_command = np.array(x1_command),np.array(y1_command)
-    
-    # subtract off mean
-    x1_copy_zm,y1_copy_zm = x1_copy-mean(x1_copy),y1_copy-mean(y1_copy)
-    x1_command_zm,y1_command_zm = x1_command-mean(x1_command),y1_command-mean(y1_command)
+    x1_d_copy,y1_d_copy = np.array(x1_d_copy),np.array(y1_d_copy)
+    x1_d_command,y1_d_command = np.array(x1_d_command),np.array(y1_d_command)
     
     # redo the N-point DFT
-    dftx_zoom_copy,dfty_zoom_copy = np.fft.fft(x1_copy_zm,n=len(x_copy)),np.fft.fft(y1_copy_zm,n=len(y_copy))
-    dftx_zoom_command,dfty_zoom_command = np.fft.fft(x1_command_zm,n=dft_size_command),np.fft.fft(y1_command_zm,n=dft_size_command)
-    print 'check: ',dftx_zoom_copy[0],' = ',dftx_copy[0],'?'
-    for w in range(len(dftx_zoom_copy)):
-        if dftx_zoom_copy[w]==dftx_copy[w]:
-            print 'w is ',w
-
+    dftx_zoom_copy,dfty_zoom_copy = np.fft.fft(x1_d_copy,n=len(x1_d_copy)),np.fft.fft(y1_d_copy,n=len(y1_d_copy))
+    dftx_zoom_command,dfty_zoom_command = np.fft.fft(x1_command,n=dft_size_command),np.fft.fft(y1_command,n=dft_size_command)
+    print 'check for dftx_zoom: ',sum(x1_d_copy),' = ',dftx_zoom_copy[0],' = ',dftx_copy[0],'?'
+    #for w in range(len(dftx_zoom_copy)):
+        #if dftx_zoom_copy[w]==dftx_copy[w]:
+            #print 'w is ',w
+"""
     # only use the positive frequencies
     dftx_zoom_posfreq_copy,dfty_zoom_posfreq_copy = dftx_zoom_copy[:k_near_pi_copy],dfty_zoom_copy[:k_near_pi_copy]
     print np.abs(dftx_zoom_posfreq_copy[:5])
@@ -283,7 +283,7 @@ for fname in dirs[:3]:
     # save figures
     fig_xt_copy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/dftx_copy_'+fname[:len(fname)-4]+'.png')
     fig_yt_copy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/dfty_copy_'+fname[:len(fname)-4]+'.png')
-"""
+
     # command clocks
     fig_xt_command,fig_yt_command = plt.figure(),plt.figure()
     fig_xt_command.subplots_adjust(hspace=0.3)
