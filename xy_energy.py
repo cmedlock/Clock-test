@@ -216,16 +216,16 @@ ct.make_hist([elt[1] for elt in Estd_x_copy if elt[0]=='healthy'],
              [elt[1] for elt in Estd_x_copy if elt[0]=='impaired'],
              binedges,'Std. Deviation of Energy Distribution','Estd_x_copy',path)
 binedges = ct.get_bins(Estd_y_copy,nbins=10)
-ct.make_hist([elt[1] for elt in Epeak_y_copy if elt[0]=='healthy'],
-             [elt[1] for elt in Epeak_y_copy if elt[0]=='impaired'],
+ct.make_hist([elt[1] for elt in Estd_y_copy if elt[0]=='healthy'],
+             [elt[1] for elt in Estd_y_copy if elt[0]=='impaired'],
              binedges,'Std. Deviation of Energy Distribution','Estd_y_copy',path)
 binedges = ct.get_bins(Estd_x_command,nbins=10)
 ct.make_hist([elt[1] for elt in Estd_x_command if elt[0]=='healthy'],
              [elt[1] for elt in Estd_x_command if elt[0]=='impaired'],
              binedges,'Std. Deviation of Energy Distribution','Estd_x_command',path)
-binedges = ct.get_bins(Estd_y_copy,nbins=10)
-ct.make_hist([elt[1] for elt in Epeak_y_command if elt[0]=='healthy'],
-             [elt[1] for elt in Epeak_y_command if elt[0]=='impaired'],
+binedges = ct.get_bins(Estd_y_command,nbins=10)
+ct.make_hist([elt[1] for elt in Estd_y_command if elt[0]=='healthy'],
+             [elt[1] for elt in Estd_y_command if elt[0]=='impaired'],
              binedges,'Std. Deviation of Energy Distribution','Estd_y_command',path)
 
 binedges = ct.get_bins(Ecentral_x_copy,nbins=10)
