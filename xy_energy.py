@@ -1,5 +1,6 @@
 # calculate DFS coefficients of each x vs. t and y vs. t signal
-# calculate percent energy in peak and percent energy within 1 std. deviation of w = 0
+# calculate percent energy in peak, std. deviation of energy distribution,
+# and percent energy within 1 std. deviation of w = 0
 
 import math
 import matplotlib
@@ -25,6 +26,8 @@ Epeak_x_command,Epeak_y_command = [],[]
 
 # fraction of energy contained in DFS coefficients that
 # within 1 std. deviation of w = 0
+Estd_x_copy,Estd_y_copy = [],[]
+Estd_x_command,Estd_y_command = [],[]
 Ecentral_x_copy,Ecentral_y_copy = [],[]
 Ecentral_x_command,Ecentral_y_command = [],[]
 
@@ -112,14 +115,12 @@ for fname in dirs:
     
     # dft's
     dft_size_copy,dft_size_command = len(x_copy),len(x_command)
+    k_copy,k_command = np.arange(dft_size_copy),np.arange(dft_size_command)
     dftx_copy,dfty_copy = np.fft.fft(x_copy_zm,n=dft_size_copy),np.fft.fft(y_copy_zm,n=dft_size_copy)
     dftx_command,dfty_command = np.fft.fft(x_command_zm,n=dft_size_command),np.fft.fft(y_command_zm,n=dft_size_command)
-    k_copy = np.arange(dft_size_copy)
-    k_command = np.arange(dft_size_command)
     
-    # center the coefficients around w = 0
-    # k_near_pi is the k value for which w_k = 2*pi*k/N is closest to,
-    # but not larger than, pi
+    # k_near_pi is the smallest k value for which w_k = 2*pi*k/N is
+    # greater than or equal to pi
     k_near_pi_copy,k_near_pi_command = 0,0
     if dft_size_copy%2==0:
         k_near_pi_copy = dft_size_copy/2+1
@@ -129,10 +130,13 @@ for fname in dirs:
         k_near_pi_command = dft_size_command/2+1
     else:
         k_near_pi_command = math.ceil(dft_size_command/2)
-        
+    
+    # center the coefficients around w = 0
+    k_centered_copy = np.linspace(-dft_size_copy/2,dft_size_copy/2,dft_size_copy)
     dftx_centered_copy = np.concatenate((dftx_copy[k_near_pi_copy:],dftx_copy[:k_near_pi_copy]))
     dfty_centered_copy = np.concatenate((dfty_copy[k_near_pi_copy:],dfty_copy[:k_near_pi_copy]))
     
+    k_centered_command = np.linspace(-dft_size_command/2,dft_size_copy/2,dft_size_command)
     dftx_centered_command = np.concatenate((dftx_command[k_near_pi_command:],dftx_command[:k_near_pi_command]))
     dfty_centered_command = np.concatenate((dfty_command[k_near_pi_command:],dfty_command[:k_near_pi_command]))
 
@@ -153,50 +157,43 @@ for fname in dirs:
 
     # percent energy within 1 std. deviation of the center of the energy distribution
     # copy clocks
-    mean_r_x_copy,mean_r_y_copy = 0,0
-    for r in range(len(Ex_copy)):
-        mean_r_x_copy += Ex_copy[r]/Ex_total_copy*r
-        mean_r_y_copy += Ey_copy[r]/Ey_total_copy*r
-    
-    Ex_std_copy,Ey_std_copy = 0,0
-    for w in range(len(Ex_copy)):
-        Ex_std_copy += Ex_copy[w]/Ex_total_copy*w**2
-        Ey_std_copy += Ey_copy[w]/Ey_total_copy*w**2
-    Ex_std_copy -= mean_r_x_copy**2
-    Ey_std_copy -= mean_r_y_copy**2
+    # percent energy within 1 std. deviation of the center of the energy distribution
+    Ex_var_copy,Ey_var_copy = 0,0
+    for w in range(dft_size_copy):
+        Ex_var_copy += k_centered_copy[w]**2*Ex_copy[w]/Ex_total_copy
+        Ey_var_copy += k_centered_copy[w]**2*Ey_copy[w]/Ey_total_copy
+    Ex_std_copy,Ey_std_copy = math.sqrt(Ex_var_copy),math.sqrt(Ey_var_copy)
+    Estd_x_copy.append((ftype,Ex_std_copy))
+    Estd_y_copy.append((ftype,Ey_std_copy))
     
     Ex_central_copy,Ey_central_copy = 0,0
-    for d in range(len(Ex_copy)):
-        if abs(mean_r_x_copy-d)<=Ex_std_copy:
+    for d in range(dft_size_copy):
+        if abs((dft_size_copy-1)/2-d)<=Ex_std_copy:
             Ex_central_copy += Ex_copy[d]/Ex_total_copy
-        if abs(mean_r_y_copy-d)<=Ey_std_copy:
+        if abs((dft_size_copy-1)/2-d)<=Ey_std_copy:
             Ey_central_copy += Ey_copy[d]/Ey_total_copy
     Ecentral_x_copy.append((ftype,Ex_central_copy))
     Ecentral_y_copy.append((ftype,Ey_central_copy))
-    
+
     # command clocks
-    mean_r_x_command,mean_r_y_command = 0,0
-    for r in range(len(Ex_command)):
-        mean_r_x_command += Ex_command[r]/Ex_total_command*r
-        mean_r_y_command += Ey_command[r]/Ey_total_command*r
-    
-    Ex_std_command,Ey_std_command = 0,0
-    for w in range(len(Ex_command)):
-        Ex_std_command += Ex_command[w]/Ex_total_command*w**2
-        Ey_std_command += Ey_command[w]/Ey_total_command*w**2
-    Ex_std_command -= mean_r_x_command**2
-    Ey_std_command -= mean_r_y_command**2
+    Ex_var_command,Ey_var_command = 0,0
+    for w in range(dft_size_command):
+        Ex_var_command += k_centered_command[w]**2*Ex_command[w]/Ex_total_command
+        Ey_var_command += k_centered_command[w]**2*Ey_command[w]/Ey_total_command
+    Ex_std_command,Ey_std_command = math.sqrt(Ex_var_command),math.sqrt(Ey_var_command)
+    Estd_x_command.append((ftype,Ex_std_command))
+    Estd_y_command.append((ftype,Ey_std_command))
     
     Ex_central_command,Ey_central_command = 0,0
-    for d in range(len(Ex_command)):
-        if abs(mean_r_x_command-d)<=Ex_std_command:
+    for d in range(dft_size_command):
+        if abs((dft_size_command-1)/2-d)<=Ex_std_command:
             Ex_central_command += Ex_command[d]/Ex_total_command
-        if abs(mean_r_y_command-d)<=Ey_std_command:
+        if abs((dft_size_command-1)/2-d)<=Ey_std_command:
             Ey_central_command += Ey_command[d]/Ey_total_command
     Ecentral_x_command.append((ftype,Ex_central_command))
     Ecentral_y_command.append((ftype,Ey_central_command))
 
-# compare percent energy in peak for the drawings of healthy vs. impaired patients
+# compare energy properties for the drawings of healthy vs. impaired patients
 binedges = ct.get_bins(Epeak_x_copy,nbins=10)
 ct.make_hist([elt[1] for elt in Epeak_x_copy if elt[0]=='healthy'],
              [elt[1] for elt in Epeak_x_copy if elt[0]=='impaired'],
@@ -213,3 +210,37 @@ binedges = ct.get_bins(Epeak_y_command,nbins=10)
 ct.make_hist([elt[1] for elt in Epeak_y_command if elt[0]=='healthy'],
              [elt[1] for elt in Epeak_y_command if elt[0]=='impaired'],
              binedges,'Fraction of Energy in Largest DFS Coefficient','Epeak_y_command',path)
+
+binedges = ct.get_bins(Estd_x_copy,nbins=10)
+ct.make_hist([elt[1] for elt in Estd_x_copy if elt[0]=='healthy'],
+             [elt[1] for elt in Estd_x_copy if elt[0]=='impaired'],
+             binedges,'Std. Deviation of Energy Distribution','Estd_x_copy',path)
+binedges = ct.get_bins(Estd_y_copy,nbins=10)
+ct.make_hist([elt[1] for elt in Epeak_y_copy if elt[0]=='healthy'],
+             [elt[1] for elt in Epeak_y_copy if elt[0]=='impaired'],
+             binedges,'Std. Deviation of Energy Distribution','Estd_y_copy',path)
+binedges = ct.get_bins(Estd_x_command,nbins=10)
+ct.make_hist([elt[1] for elt in Estd_x_command if elt[0]=='healthy'],
+             [elt[1] for elt in Estd_x_command if elt[0]=='impaired'],
+             binedges,'Std. Deviation of Energy Distribution','Estd_x_command',path)
+binedges = ct.get_bins(Estd_y_copy,nbins=10)
+ct.make_hist([elt[1] for elt in Epeak_y_command if elt[0]=='healthy'],
+             [elt[1] for elt in Epeak_y_command if elt[0]=='impaired'],
+             binedges,'Std. Deviation of Energy Distribution','Estd_y_command',path)
+
+binedges = ct.get_bins(Ecentral_x_copy,nbins=10)
+ct.make_hist([elt[1] for elt in Ecentral_x_copy if elt[0]=='healthy'],
+             [elt[1] for elt in Ecentral_x_copy if elt[0]=='impaired'],
+             binedges,'Fraction of Energy w/in 1 Std.Dev. of w = 0','Ecentral_x_copy',path)
+binedges = ct.get_bins(Ecentral_y_copy,nbins=10)
+ct.make_hist([elt[1] for elt in Ecentral_y_copy if elt[0]=='healthy'],
+             [elt[1] for elt in Ecentral_y_copy if elt[0]=='impaired'],
+             binedges,'Fraction of Energy w/in 1 Std.Dev. of w = 0','Ecentral_y_copy',path)
+binedges = ct.get_bins(Ecentral_x_command,nbins=10)
+ct.make_hist([elt[1] for elt in Ecentral_x_command if elt[0]=='healthy'],
+             [elt[1] for elt in Ecentral_x_command if elt[0]=='impaired'],
+             binedges,'Fraction of Energy w/in 1 Std.Dev. of w = 0','Ecentral_x_command',path)
+binedges = ct.get_bins(Ecentral_y_command,nbins=10)
+ct.make_hist([elt[1] for elt in Ecentral_y_command if elt[0]=='healthy'],
+             [elt[1] for elt in Ecentral_y_command if elt[0]=='impaired'],
+             binedges,'Fraction of Energy w/in 1 Std.Dev. of w = 0','Ecentral_y_command',path)
