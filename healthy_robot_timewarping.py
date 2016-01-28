@@ -20,7 +20,7 @@ def sinc(omega_c,n,length_of_sinc):
         return math.sin(omega_c*n)/(omega_c*n)
 
 # get coordinates and timestamps
-n = np.arange(141)
+n = np.arange(142)
 x = np.cos(1./2.*(2.*np.pi*n/250.)**2)
 y = np.sin(1./2.*(2.*np.pi*n/250.)**2)
 
@@ -32,6 +32,7 @@ for w in range(1,len(x)):
     dists.append(dist)
 dist_avg = mean(dists)
 print 'average distance between points is ',dist_avg
+print 'total distance is ',sum(dists)
 
 # want to get 141 evenly-spaced points along the curve
 
@@ -43,35 +44,54 @@ for w in range(len(x)-1):
     y_interp.append(y[w])
     dx,dy = x[w+1]-x[w],y[w+1]-y[w]
     dist = math.sqrt(dx**2+dy**2)
-    for r in range(1,10):
-        x_new = x[w]+r*dx/10
-        y_new = y[w]+r*dy/10
+    for r in range(1,100):
+        x_new = x[w]+r*dx/100
+        y_new = y[w]+r*dy/100
         x_interp.append(x_new)
         y_interp.append(y_new)
 x_interp.append(x[-1])
 y_interp.append(y[-1])
-print 'average distance between interpolated points is ',dist_avg/10
+# check
+dists_interp = []
+for w in range(1,len(x_interp)):
+    dx,dy = x_interp[w]-x_interp[w-1],y_interp[w]-y_interp[w-1]
+    dist = math.sqrt(dx**2+dy**2)
+    dists_interp.append(dist)
+dist_avg_interp = mean(dists_interp)
+print '\naverage distance between interpolated points is ',dist_avg_interp
+print 'total distance is now ',sum(dists_interp)
 
 # start from the first point and find the ones that are 
 # approximately a distance dist_avg from each other
 x_eqdist,y_eqdist = [x_interp[0]],[y_interp[0]]
-idx = 0 
-for k in range(len(x)):
+idx = 0
+for k in range(len(x)-1):
     dist_total = 0
     for j in range(idx,len(x_interp)-1):
         dx,dy = x_interp[j+1]-x_interp[j],y_interp[j+1]-y_interp[j]
         dist_total += math.sqrt(dx**2+dy**2)
-        if abs(dist_total-dist_avg)<0.01:
+        if abs(dist_total-dist_avg)<0.0005:
             idx = j+1
             break
     x_eqdist.append(x_interp[idx])
     y_eqdist.append(y_interp[idx])
-print len(x_eqdist),len(y_eqdist)
+# check
+dists_check = []
+for w in range(1,len(x_eqdist)):
+    dx,dy = x_eqdist[w]-x_eqdist[w-1],y_eqdist[w]-y_eqdist[w-1]
+    dist = math.sqrt(dx**2+dy**2)
+    dists_check.append(dist)
+dist_avg_check = mean(dists_check)
+print '\naverage distance between points is now ',dist_avg_check
+print 'total distance is now ',sum(dists_check)
+
 plt.close('all')
 
 fig_xy = plt.figure()
 ax_xy = fig_xy.add_subplot(111)
-ax_xy.plot(x,y)
+#ax_xy.plot(x,y,label='x,y')
+ax_xy.plot(x_eqdist,y_eqdist,label='x_eqdist,y_eqdist')
+ax_xy.legend(loc='best',frameon=False)
 ax_xy.set_xlabel('x')
 ax_xy.set_ylabel('y')
 
@@ -81,6 +101,7 @@ ax1.plot(x,label='x')
 ax1.plot(y,label='y')
 ax1.legend(loc='best',frameon=False)
 ax1.set_ylabel('x,y',fontsize=20)
+ax1.set_xlim(right=len(x))
 ax1.set_ylim(bottom=min(x)-0.2,top=max(x)+0.2)
 ax2 = fig.add_subplot(312)
 ax2.plot(dists)
