@@ -25,7 +25,7 @@ corr_x_command,corr_y_command = [],[]
 Ediff_x_copy,Ediff_y_copy = [],[]
 Ediff_x_command,Ediff_y_command = [],[]
 
-for fname in dirs[:3]:
+for fname in dirs:
     if 'Scored' not in fname:
         continue
     print 'reading file ',fname,'...'
@@ -100,8 +100,8 @@ for fname in dirs[:3]:
     
     f.close()
 
-    x_copy,y_copy,t_copy = np.array(x_copy),np.array(y_copy),np.array(t_copy)
-    x_command,y_command,t_command = np.array(x_command),np.array(y_command),np.array(t_command)
+    x_copy,y_copy,t_copy = np.array(x_copy)-x_copy[0],np.array(y_copy)-y_copy[0],np.array(t_copy)-t_copy[0]
+    x_command,y_command,t_command = np.array(x_command)-x_command[0],np.array(y_command)-y_command[0],np.array(t_command)-t_command[0]
     
     # compensate for non-constant velocity
     N_orig_copy,N_orig_command = len(x_copy),len(x_command)
@@ -114,8 +114,8 @@ for fname in dirs[:3]:
         dist = math.sqrt(dx**2+dy**2)
         dists_copy.append(dist)
     dist_avg_copy = mean(dists_copy)
-    print 'average distance between points is ',dist_avg_copy
-    print 'total distance is ',sum(dists_copy)
+    #print 'average distance between points is ',dist_avg_copy
+    #print 'total distance is ',sum(dists_copy)
     # command clocks
     dists_command = []
     for w in range(1,len(x_command)):
@@ -176,7 +176,7 @@ for fname in dirs[:3]:
 	        break
         x_eqdist_copy.append(x_interp_copy[idx])
         y_eqdist_copy.append(y_interp_copy[idx])
-    x_eqdist_copy,y_eqdist_copy = np.array(x_eqdist_copy),np.array(y_eqdist_copy)
+    x_eqdist_copy,y_eqdist_copy = np.array(x_eqdist_copy)-x_eqdist_copy[0],np.array(y_eqdist_copy)-y_eqdist_copy[0]
     # command clocks
     x_eqdist_command,y_eqdist_command = [x_interp_command[0]],[y_interp_command[0]]
     idx = 0
@@ -264,10 +264,12 @@ for fname in dirs[:3]:
     #print 'phase for y_true[n] is ',phase_y,' and max correlation is ',max_corr_y
     x_true_copy = np.concatenate((x_true_copy[phase_x_copy:],x_true_copy[:phase_x_copy]))
     y_true_copy = np.concatenate((y_true_copy[phase_y_copy:],y_true_copy[:phase_y_copy]))
+    # use range of x or y to estimate amplitude
     amp_x_copy = (max(x_eqdist_copy)-min(x_eqdist_copy))/2
     amp_y_copy = (max(y_eqdist_copy)-min(y_eqdist_copy))/2
     x_true_copy = amp_x_copy*x_true_copy
     y_true_copy = amp_y_copy*y_true_copy
+    x_true_copy,y_true_copy = x_true_copy-x_true_copy[0],y_true_copy-y_true_copy[0]
     # command clocks
     phase_x_command,max_corr_x_command = 0,0
     phase_y_command,max_corr_y_command = 0,0
@@ -290,22 +292,39 @@ for fname in dirs[:3]:
     amp_y_command = (max(y_eqdist_command)-min(y_eqdist_command))/2
     x_true_command = amp_x_command*x_true_command
     y_true_command = amp_y_command*y_true_command
+    x_true_command,y_true_command = x_true_command-x_true_command[0],y_true_command-y_true_command[0]
     
+    # compute and save correlation between the two
+    corr_x_copy.append(np.dot(x_eqdist_copy,x_true_copy))
+    corr_y_copy.append(np.dot(y_eqdist_copy,y_true_copy))
+    corr_x_command.append(np.dot(x_eqdist_command,x_true_command))
+    corr_y_command.append(np.dot(y_eqdist_command,y_true_command))
+    
+    # compute and save mean squared difference between the two
+    Etrue_x_copy,Etrue_y_copy = sum(x_true_copy**2),sum(y_true_copy**2)
+    Ediff_x_copy.append(sum((x_eqdist_copy-x_true_copy)**2))
+    Ediff_y_copy.append(sum((y_eqdist_copy-y_true_copy)**2))
+    Ediff_x_command.append(sum((x_eqdist_command-x_true_command)**2))
+    Ediff_y_command.append(sum((y_eqdist_command-y_true_command)**2))
+
     # copy clocks
-    fig_xt_copy,fig_yt_copy = plt.figure(),plt.figure()
+    fig_xt_copy,fig_yt_copy,fig_xy_copy = plt.figure(),plt.figure(),plt.figure()
     fig_xt_copy.subplots_adjust(hspace=0.4)
     fig_yt_copy.subplots_adjust(hspace=0.4)
-    xt_copy,yt_copy = fig_xt_copy.add_subplot(311),fig_yt_copy.add_subplot(311)
+    xt_copy,yt_copy,xy_copy = fig_xt_copy.add_subplot(311),fig_yt_copy.add_subplot(311),fig_xy_copy.add_subplot(111)
     xt_eqdist_copy,yt_eqdist_copy = fig_xt_copy.add_subplot(312),fig_yt_copy.add_subplot(312)
+    xy_copy.plot(x_copy,y_copy,label='x[n],y[n]')
+    xy_copy.plot(x_true_copy,y_true_copy,'k-.',label='x_true[n],y_true[n]')
+    xy_copy.legend(loc='best',frameon=False)
     xt_copy.plot(x_copy,label='x[n]')
-    xt_eqdist_copy.plot(x_eqdist_copy-x_eqdist_copy[0],label='x_eqdist[n]')
-    xt_eqdist_copy.plot(x_true_copy-x_true_copy[0],'k-.',lw=3,label='x_true[n]')
+    xt_eqdist_copy.plot(x_eqdist_copy,label='x_eqdist[n]')
+    xt_eqdist_copy.plot(x_true_copy,'k-.',lw=3,label='x_true[n]')
     xt_copy.legend(loc='best',frameon=False)
     xt_eqdist_copy.legend(loc='best',frameon=False)
     xt_eqdist_copy.legend(loc='best',frameon=False)
     yt_copy.plot(y_copy,label='y[n]')
-    yt_eqdist_copy.plot(y_eqdist_copy-y_eqdist_copy[0],label='y_eqdist[n]')
-    yt_eqdist_copy.plot(y_true_copy-y_true_copy[0],'k-.',lw=3,label='y_true[n]')
+    yt_eqdist_copy.plot(y_eqdist_copy,label='y_eqdist[n]')
+    yt_eqdist_copy.plot(y_true_copy,'k-.',lw=3,label='y_true[n]')
     yt_copy.legend(loc='best',frameon=False)
     yt_eqdist_copy.legend(loc='best',frameon=False)
     
@@ -317,6 +336,17 @@ for fname in dirs[:3]:
     dftyk_copy.set_ylim(bottom=min(np.abs(dfty_posfreq_copy[1:]))/10,top=max(np.abs(dfty_copy))*10)
     dftxk_copy.set_yscale('log')
     dftyk_copy.set_yscale('log')
+
+    # equalize axis scales
+    if max(x_copy)-min(x_copy)>max(y_copy)-min(y_copy):
+        ax_range = max(x_copy)-min(x_copy)+20
+        xy_copy.set_xlim(min(x_copy)-10,max(x_copy)+10)
+        xy_copy.set_ylim(min(y_copy)-10,min(y_copy)+ax_range)
+    else:
+        ax_range = max(y_copy)-min(y_copy)+20
+        xy_copy.set_xlim(min(x_copy)-10,min(x_copy)+ax_range)
+        xy_copy.set_ylim(min(y_copy)-10,max(y_copy)+10)
+    plt.axis('equal')
 
     # set axis limits
     xt_copy.set_xlim(right=len(x_copy))
@@ -334,18 +364,22 @@ for fname in dirs[:3]:
 
     fig_xt_copy.text(0.99, 0.96,fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
     fig_yt_copy.text(0.99, 0.96,fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
+    fig_xy_copy.text(0.99, 0.96,fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
 
     if 'YDU' in fname:
         fig_xt_copy.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
         fig_yt_copy.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_xy_copy.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
     elif 'CIN' in fname:
         fig_xt_copy.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
         fig_yt_copy.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_xy_copy.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
     else:
         print 'not a valid filename'
         
     # set axis labels
     x_axis_fontsize = 15
+    xy_copy.set_xlabel('x',fontsize=x_axis_fontsize)
     xt_copy.set_xlabel('n',fontsize=x_axis_fontsize)
     yt_copy.set_xlabel('n',fontsize=x_axis_fontsize)
     xt_eqdist_copy.set_xlabel('n',fontsize=x_axis_fontsize)
@@ -355,6 +389,7 @@ for fname in dirs[:3]:
 
     y_axis_fontsize = 12
     linecolor_xy = 'blue'
+    xy_copy.set_ylabel('y',fontsize=y_axis_fontsize)
     xt_copy.set_ylabel('x[n]',color=linecolor_xy,fontsize=y_axis_fontsize)
     yt_copy.set_ylabel('y[n]',color=linecolor_xy,fontsize=y_axis_fontsize)
     xt_eqdist_copy.set_ylabel('x_eqdist[n],\nx_true[n]',color=linecolor_xy,fontsize=y_axis_fontsize)
@@ -368,32 +403,36 @@ for fname in dirs[:3]:
     for y2 in yt_eqdist_copy.get_yticklabels():
         y2.set_color(linecolor_xy)
         
-    dftxk_copy.set_ylabel(r'$|X[k]|$',color=linecolor_dft,fontsize=y_axis_fontsize)
-    dftyk_copy.set_ylabel(r'$|Y[k]|$',color=linecolor_dft,fontsize=y_axis_fontsize)
+    dftxk_copy.set_ylabel('|X_eqdist[k]|',color=linecolor_dft,fontsize=y_axis_fontsize)
+    dftyk_copy.set_ylabel('|Y_eqdist[k]|',color=linecolor_dft,fontsize=y_axis_fontsize)
     for v1 in dftxk_copy.get_yticklabels():
         v1.set_color(linecolor_dft)
     for v2 in dftyk_copy.get_yticklabels():
         v2.set_color(linecolor_dft)
     
     # save figures
+    fig_xy_copy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/xy_copy_'+fname[:len(fname)-4]+'.png')
     fig_xt_copy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/x_true_copy_'+fname[:len(fname)-4]+'.png')
     fig_yt_copy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/y_true_copy_'+fname[:len(fname)-4]+'.png')
     
     # command clocks
-    fig_xt_command,fig_yt_command = plt.figure(),plt.figure()
+    fig_xt_command,fig_yt_command,fig_xy_command = plt.figure(),plt.figure(),plt.figure()
     fig_xt_command.subplots_adjust(hspace=0.4)
     fig_yt_command.subplots_adjust(hspace=0.4)
-    xt_command,yt_command = fig_xt_command.add_subplot(311),fig_yt_command.add_subplot(311)
+    xt_command,yt_command,xy_command = fig_xt_command.add_subplot(311),fig_yt_command.add_subplot(311),fig_xy_command.add_subplot(111)
     xt_eqdist_command,yt_eqdist_command = fig_xt_command.add_subplot(312),fig_yt_command.add_subplot(312)
+    xy_command.plot(x_command,y_command,label='x[n],y[n]')
+    xy_command.plot(x_true_command,y_true_command,'k-.',label='x_true[n],y_true[n]')
+    xy_command.legend(loc='best',frameon=False)
     xt_command.plot(x_command,label='x[n]')
-    xt_eqdist_command.plot(x_eqdist_command-x_eqdist_command[0],label='x_eqdist[n]')
-    xt_eqdist_command.plot(x_true_command-x_true_command[0],'k-.',lw=3,label='x_true[n]')
+    xt_eqdist_command.plot(x_eqdist_command,label='x_eqdist[n]')
+    xt_eqdist_command.plot(x_true_command,'k-.',lw=3,label='x_true[n]')
     xt_command.legend(loc='best',frameon=False)
     xt_eqdist_command.legend(loc='best',frameon=False)
     xt_eqdist_command.legend(loc='best',frameon=False)
     yt_command.plot(y_command,label='y[n]')
-    yt_eqdist_command.plot(y_eqdist_command-y_eqdist_command[0],label='y_eqdist[n]')
-    yt_eqdist_command.plot(y_true_command-y_true_command[0],'k-.',lw=3,label='y_true[n]')
+    yt_eqdist_command.plot(y_eqdist_command,label='y_eqdist[n]')
+    yt_eqdist_command.plot(y_true_command,'k-.',lw=3,label='y_true[n]')
     yt_command.legend(loc='best',frameon=False)
     yt_eqdist_command.legend(loc='best',frameon=False)
     
@@ -406,6 +445,17 @@ for fname in dirs[:3]:
     dftxk_command.set_yscale('log')
     dftyk_command.set_yscale('log')
 
+    # equalize axis scales
+    if max(x_command)-min(x_command)>max(y_command)-min(y_command):
+        ax_range = max(x_command)-min(x_command)+20
+        xy_command.set_xlim(min(x_command)-10,max(x_command)+10)
+        xy_command.set_ylim(min(y_command)-10,min(y_command)+ax_range)
+    else:
+        ax_range = max(y_command)-min(y_command)+20
+        xy_command.set_xlim(min(x_command)-10,min(x_command)+ax_range)
+        xy_command.set_ylim(min(y_command)-10,max(y_command)+10)
+    plt.axis('equal')
+    
     # set axis limits
     xt_command.set_xlim(right=len(x_command))
     yt_command.set_xlim(right=len(y_command))
@@ -420,13 +470,16 @@ for fname in dirs[:3]:
     #yt_command.set_title('Sample command Clock',fontsize=title_fontsize)
     #xy_command.set_title('Sample command Clock',fontsize=title_fontsize)
 
+    fig_xy_command.text(0.99, 0.96,fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
     fig_xt_command.text(0.99, 0.96,fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
     fig_yt_command.text(0.99, 0.96,fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
 
     if 'YDU' in fname:
+        fig_xy_command.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
         fig_xt_command.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
         fig_yt_command.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
     elif 'CIN' in fname:
+        fig_xy_command.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
         fig_xt_command.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
         fig_yt_command.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
     else:
@@ -434,6 +487,7 @@ for fname in dirs[:3]:
         
     # set axis labels
     x_axis_fontsize = 15
+    xy_command.set_xlabel('x',fontsize=x_axis_fontsize)
     xt_command.set_xlabel('n',fontsize=x_axis_fontsize)
     yt_command.set_xlabel('n',fontsize=x_axis_fontsize)
     xt_eqdist_command.set_xlabel('n',fontsize=x_axis_fontsize)
@@ -443,6 +497,7 @@ for fname in dirs[:3]:
 
     y_axis_fontsize = 12
     linecolor_xy = 'blue'
+    xy_command.set_ylabel('y',fontsize=y_axis_fontsize)
     xt_command.set_ylabel('x[n]',color=linecolor_xy,fontsize=y_axis_fontsize)
     yt_command.set_ylabel('y[n]',color=linecolor_xy,fontsize=y_axis_fontsize)
     xt_eqdist_command.set_ylabel('x_eqdist[n],\nx_true[n]',color=linecolor_xy,fontsize=y_axis_fontsize)
@@ -456,25 +511,16 @@ for fname in dirs[:3]:
     for y2 in yt_eqdist_command.get_yticklabels():
         y2.set_color(linecolor_xy)
         
-    dftxk_command.set_ylabel(r'$|X[k]|$',color=linecolor_dft,fontsize=y_axis_fontsize)
-    dftyk_command.set_ylabel(r'$|Y[k]|$',color=linecolor_dft,fontsize=y_axis_fontsize)
+    dftxk_command.set_ylabel('|X_eqdist[k]|',color=linecolor_dft,fontsize=y_axis_fontsize)
+    dftyk_command.set_ylabel('|Y_eqdist[k]|',color=linecolor_dft,fontsize=y_axis_fontsize)
     for v1 in dftxk_command.get_yticklabels():
         v1.set_color(linecolor_dft)
     for v2 in dftyk_command.get_yticklabels():
         v2.set_color(linecolor_dft)
 
     # save figures
+    fig_xy_command.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/xy_command_'+fname[:len(fname)-4]+'.png')
     fig_xt_command.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/x_true_command_'+fname[:len(fname)-4]+'.png')
     fig_yt_command.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/y_true_command_'+fname[:len(fname)-4]+'.png')
 
     plt.close('all')
-
-# compare percent energy in peak for the drawings of healthy vs. impaired patients
-#binedges = ct.get_bins(energy_in_peak_copy,nbins=10)
-#ct.make_hist([elt[1] for elt in energy_in_peak_copy if elt[0]=='healthy'],
-             #[elt[1] for elt in energy_in_peak_copy if elt[0]=='impaired'],
-             #binedges,'Percent Energy in Largest DFS Coefficient','energy_in_peak_copy',path)
-#binedges = ct.get_bins(energy_in_peak_command,nbins=10)
-#ct.make_hist([elt[1] for elt in energy_in_peak_command if elt[0]=='healthy'],
-             #[elt[1] for elt in energy_in_peak_command if elt[0]=='impaired'],
-             #binedges,'Percent Energy in Largest DFS Coefficient','energy_in_peak_command',path)
