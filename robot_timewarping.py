@@ -31,8 +31,14 @@ def sinc(omega_c,n,length_of_sinc):
 
 # get coordinates and timestamps
 n = np.arange(142)
-x = np.cos(1./2.*(2.*pi*n/250.)**2)
-y = np.sin(1./2.*(2.*pi*n/250.)**2)
+noise_x = np.random.normal(loc=0,scale=0.01,size=len(n))
+noise_y = np.random.normal(loc=0,scale=0.01,size=len(n))
+x = np.cos(1./2.*(2.*pi*n/250.)**2)+noise_x # for a healthy robot, comment out the noise
+y = np.sin(1./2.*(2.*pi*n/250.)**2)+noise_y
+# make the starting point was something other than (1,0)
+offset = 100
+x = np.concatenate((x[offset:],x[:offset]))
+y = np.concatenate((y[offset:],y[:offset]))
 N_orig = len(x)
 
 # velocity/distance (T = 1)
@@ -55,9 +61,9 @@ for w in range(len(x)-1):
     y_interp.append(y[w])
     dx,dy = x[w+1]-x[w],y[w+1]-y[w]
     dist = math.sqrt(dx**2+dy**2)
-    for r in range(1,100):
-        x_new = x[w]+r*dx/100
-        y_new = y[w]+r*dy/100
+    for r in range(1,200):
+        x_new = x[w]+r*dx/200
+        y_new = y[w]+r*dy/200
         x_interp.append(x_new)
         y_interp.append(y_new)
 x_interp.append(x[-1])
@@ -127,9 +133,28 @@ print '\ncheck: ',w_true_x,' = ',2.*pi/dft_size,' = ',w_true_y,'?'
 print '\n',np.angle(dftx[1]),np.angle(dftx[-1]),' ---> ',np.angle(dftx[1])-np.angle(dftx[-1])
 print np.angle(dfty[1]),np.angle(dfty[-1]),' ---> ',np.angle(dfty[1])-np.angle(dfty[-1])
 
-# compare actual, time-warped drawing to ideal underlying sinusoid
+# calculate ideal underlying sinusoid
 x_true = np.cos(w_true_x*n)
 y_true = np.sin(w_true_y*n)
+# use maximum correlation to determine phase
+phase_x,max_corr_x = 0,0
+phase_y,max_corr_y = 0,0
+for w in range(len(x_true)):
+    x_shifted = np.concatenate((x_true[w:],x_true[:w]))
+    y_shifted = np.concatenate((y_true[w:],y_true[:w]))
+    corr_x = np.dot(x_eqdist,x_shifted)
+    corr_y = np.dot(y_eqdist,y_shifted)
+    if corr_x>max_corr_x:
+        max_corr_x = corr_x
+        phase_x = w
+    if corr_y>max_corr_y:
+        max_corr_y = corr_y
+        phase_y = w
+print 'phase for x_true[n] is ',phase_x,' and max correlation is ',max_corr_x
+print 'phase for y_true[n] is ',phase_y,' and max correlation is ',max_corr_y
+x_true = np.concatenate((x_true[phase_x:],x_true[:phase_x]))
+y_true = np.concatenate((y_true[phase_y:],y_true[:phase_y]))
+
 # compute correlation between the two
 corr_x,corr_y = np.dot(x_eqdist,x_true),np.dot(y_eqdist,y_true)
 Etrue_x,Etrue_y = sum(x_true**2),sum(y_true**2)
@@ -140,28 +165,6 @@ Ediff_x,Ediff_y = sum((x_eqdist-x_true)**2),sum((y_eqdist-y_true)**2)
 print '\n mean square difference for x[n] = ',Ediff_x,' and mean square difference for y[n] = ',Ediff_y
 
 plt.close('all')
-
-fig4 = plt.figure()
-ax7 = fig4.add_subplot(211)
-ax7.plot(x_eqdist,label='x_eqdist')
-ax7.plot(x_true,label='x_true')
-ax7.legend(loc='best',frameon=False)
-ax7.set_ylabel('x_eqdist,\nx_true',fontsize=20)
-ax7.set_xlim(right=len(x))
-ax8 = fig4.add_subplot(212)
-ax8.plot(y_eqdist,label='y_eqdist')
-ax8.plot(y_true,label='y_true')
-ax8.legend(loc='best',frameon=False)
-ax8.set_xlabel('n',fontsize=20)
-ax8.set_ylabel('y_eqdist,\ny_true',fontsize=20)
-ax8.set_xlim(right=len(y))
-
-fig_xy = plt.figure()
-ax_xy = fig_xy.add_subplot(111)
-ax_xy.plot(x,y,label='x,y')
-ax_xy.legend(loc='best',frameon=False)
-ax_xy.set_xlabel('x')
-ax_xy.set_ylabel('y')
 
 fig1 = plt.figure()
 ax1 = fig1.add_subplot(211)
@@ -174,7 +177,7 @@ ax1.set_ylim(bottom=min(x)-0.2,top=max(x)+0.2)
 ax2 = fig1.add_subplot(212)
 ax2.plot(dists)
 ax2.set_ylabel('v',fontsize=20)
-fig1.savefig(path+'figs_raw/healthy_robot/xy_nonconstant_velocity.png')
+fig1.savefig(path+'figs_raw/healthy_robot/xy_noisy_nonconstant_velocity.png')
 
 fig2 = plt.figure()
 ax3 = fig2.add_subplot(211)
@@ -187,7 +190,7 @@ ax4 = fig2.add_subplot(212)
 ax4.plot(dists_check)
 ax4.set_ylabel('v_eqdist',fontsize=20)
 ax4.set_ylim(bottom=min(dists),top=max(dists))
-fig2.savefig(path+'figs_raw/healthy_robot/xy_constant_velocity.png')
+fig2.savefig(path+'figs_raw/healthy_robot/xy_noisy_constant_velocity.png')
 
 fig3 = plt.figure()
 ax5 = fig3.add_subplot(211)
@@ -200,5 +203,30 @@ ax6.stem(pos_k,np.abs(dfty_pos_k))
 ax6.set_xlabel('k',fontsize=20)
 ax6.set_ylabel('|Y[k]|',fontsize=20)
 ax6.set_xlim(right=max(pos_k)+1)
+fig3.savefig(path+'figs_raw/healthy_robot/xy_noisy_constant_velocity_DFS.png')
+
+fig4 = plt.figure()
+ax7 = fig4.add_subplot(211)
+ax7.plot(x_eqdist,label='x_eqdist')
+ax7.plot(x_true,label='x_true')
+ax7.legend(loc='best',frameon=False)
+ax7.set_ylabel('x_eqdist,\nx_true',fontsize=15)
+ax7.set_xlim(right=len(x))
+ax8 = fig4.add_subplot(212)
+ax8.plot(y_eqdist,label='y_eqdist')
+ax8.plot(y_true,label='y_true')
+ax8.legend(loc='best',frameon=False)
+ax8.set_xlabel('n',fontsize=20)
+ax8.set_ylabel('y_eqdist,\ny_true',fontsize=15)
+ax8.set_xlim(right=len(y))
+fig4.savefig(path+'figs_raw/healthy_robot/xy_noisy_true_sinusoid.png')
+
+fig_xy = plt.figure()
+ax_xy = fig_xy.add_subplot(111)
+ax_xy.plot(x_eqdist,y_eqdist,label='x_eqdist,y_eqdist')
+ax_xy.legend(loc='best',frameon=False)
+ax_xy.set_xlabel('x_eqdist')
+ax_xy.set_ylabel('y_eqdist')
+fig_xy.savefig(path+'figs_raw/healthy_robot/circle_noisy_nonconstant_velocity.png')
 
 plt.show()
