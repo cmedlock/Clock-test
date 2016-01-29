@@ -1,3 +1,5 @@
+# for sanity checks on spectral and energy properties
+
 import math
 import matplotlib
 import matplotlib.pyplot as plt
@@ -34,19 +36,20 @@ for fname in dirs[:3]:
     # dft's
     dft_size = len(n)
     dftx,dfty = np.fft.fft(x_zm,n=dft_size),np.fft.fft(y_zm,n=dft_size)
-    print max(dftx),dftx[1]
-    print max(dfty),dfty[1]
+    print max(np.abs(dftx)),np.abs(dftx[1])
+    print max(np.abs(dfty)),np.abs(dfty[1])
     k = np.arange(dft_size)
     freq = 2*np.pi/dft_size*k
     
-    # k_near_pi is the k value for which w_k = 2*pi*k/N is closest to,
-    # but not larger than, pi
+    # k_near_pi is the smallest k value for which w_k = 2*pi*k/N is
+    # greater than or equal to pi
     k_near_pi = 0
     if dft_size%2==0:
         k_near_pi = dft_size/2+1
     else:
         k_near_pi = math.ceil(dft_size/2)
 
+    k_centered = np.linspace(-dft_size/2,dft_size/2,dft_size)
     dftx_centered = np.concatenate((dftx[k_near_pi:],dftx[:k_near_pi]))
     dfty_centered = np.concatenate((dfty[k_near_pi:],dfty[:k_near_pi]))
 
@@ -57,23 +60,18 @@ for fname in dirs[:3]:
     print 'Ex_peak = ',Ex_peak,' and Ey_peak = ',Ey_peak
     
     # percent energy within 1 std. deviation of the center of the energy distribution
-    mean_r_x,mean_r_y = 0,0
-    for r in range(len(Ex)):
-        mean_r_x += Ex[r]/Ex_total*r
-        mean_r_y += Ey[r]/Ey_total*r
-    
-    Ex_std,Ey_std = 0,0
-    for w in range(len(Ex)):
-        Ex_std += Ex[w]/Ex_total*w**2
-        Ey_std += Ey[w]/Ey_total*w**2
-    Ex_std -= mean_r_x**2
-    Ey_std -= mean_r_y**2
+    Ex_var,Ey_var = 0,0
+    for w in range(dft_size):
+        Ex_var += k_centered[w]**2*Ex[w]/Ex_total
+        Ey_var += k_centered[w]**2*Ey[w]/Ey_total
+    Ex_std,Ey_std = math.sqrt(Ex_var),math.sqrt(Ey_var)
+    print 'Ex_std = ',Ex_std,' and Ey_std = ',Ey_std
     
     Ex_central,Ey_central = 0,0
-    for d in range(len(Ex)):
-        if abs(mean_r_x-d)<=Ex_std:
+    for d in range(dft_size):
+        if abs((dft_size-1)/2-d)<=Ex_std:
             Ex_central += Ex[d]/Ex_total
-        if abs(mean_r_y-d)<=Ey_std:
+        if abs((dft_size-1)/2-d)<=Ey_std:
             Ey_central += Ey[d]/Ey_total
     print 'Ex_central = ',Ex_central,' and Ey_central = ',Ey_central
 
