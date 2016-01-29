@@ -121,9 +121,10 @@ for fname in dirs:
         y_interp.append(y[w])
         dx,dy = x[w+1]-x[w],y[w+1]-y[w]
         dist = math.sqrt(dx**2+dy**2)
-        for r in range(1,200):
-            x_new = x[w]+r*dx/200
-            y_new = y[w]+r*dy/200
+        n_segments = ceil(dist/dist_avg)*100
+        for r in range(1,int(n_segments)):
+            x_new = x[w]+r*dx/n_segments
+            y_new = y[w]+r*dy/n_segments
             x_interp.append(x_new)
             y_interp.append(y_new)
     x_interp.append(x[-1])
@@ -140,7 +141,8 @@ for fname in dirs:
         for j in range(idx,len(x_interp)-1):
             dx,dy = x_interp[j+1]-x_interp[j],y_interp[j+1]-y_interp[j]
             dist_total += math.sqrt(dx**2+dy**2)
-            if abs(dist_total-dist_avg)<0.01:
+            #if abs(dist_total-dist_avg)<0.01:
+            if abs(dist_total-dist_avg)<dist_avg/100.:
                 idx = j+1
 	        break
         x_eqdist.append(x_interp[idx])
@@ -208,7 +210,8 @@ for fname in dirs:
     amp_y = (max(y_eqdist)-min(y_eqdist))/2
     x_true = amp_x*x_true
     y_true = amp_y*y_true
-    x_true,y_true = x_true-x_true[0],y_true-y_true[0]
+    #x_true,y_true = x_true-x_true[0],y_true-y_true[0]
+    x_true,y_true = x_true+min(x_eqdist)-min(x_true),y_true+min(y_eqdist)-min(y_true)
     
     # compute and save correlation between the two
     corr_x.append(np.dot(x_eqdist,x_true))
