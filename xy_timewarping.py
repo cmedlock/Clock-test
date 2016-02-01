@@ -73,9 +73,8 @@ for fname in dirs:
         # stop recording?
         elif record==True:
             if 'symbol label' in line and len(x)>0:
-                found_clock = False
                 record = False
-                continue
+                break
             elif 'point' not in line:
                 continue
         # done?
@@ -280,31 +279,31 @@ for fname in dirs:
 
     # initialize figures
     fig_xt,fig_yt,fig_xy = plt.figure(),plt.figure(),plt.figure()
-    fig_xt.subplots_adjust(hspace=0.4,left=0.15)
-    fig_yt.subplots_adjust(hspace=0.4,left=0.15)
+    fig_xt.subplots_adjust(hspace=0.6,left=0.15)
+    fig_yt.subplots_adjust(hspace=0.6,left=0.15)
     # declare subplots
     xt,yt,xy = fig_xt.add_subplot(411),fig_yt.add_subplot(411),fig_xy.add_subplot(111)
     xt_eqdist,yt_eqdist = fig_xt.add_subplot(412),fig_yt.add_subplot(412)
     dftxk,dftyk = fig_xt.add_subplot(413),fig_yt.add_subplot(413)
     dftxk_zoom,dftyk_zoom = fig_xt.add_subplot(414),fig_yt.add_subplot(414)
     # draw circles (actual and ideal)
-    xy.plot(x,y,label='$x[n],y[n]$')
-    xy.plot(x_true,y_true,'k-.',label='$x_{true}[n],y_{true}[n]$')
-    xy.legend(loc='best',frameon=False)
+    xy.plot(x,y,lw=2,label='$x[n],y[n]$')
+    xy.plot(x_true,y_true,'k-.',lw=3,label='$x_{true}[n],y_{true}[n]$')
+    xy.legend(loc='best',frameon=False,fontsize=20)
     # draw x[n]
-    xt.plot(x)
-    xt_eqdist.plot(x_eqdist,label=r'$x_{eqdist}[n]$')
+    xt.plot(x,lw=2)
+    xt_eqdist.plot(x_eqdist,lw=2,label=r'$x_{eqdist}[n]$')
     xt_eqdist.plot(x_true,'k-.',lw=3,label=r'$x_{true}[n]$')
     xt_eqdist.legend(loc='best',frameon=False)
-    dftxk.plot(omega_posfreq,np.abs(dftx_posfreq),linecolor_dft)
-    dftxk_zoom.plot(omega_posfreq_zoom,np.abs(dftx_posfreq_zoom),linecolor_dft)
+    dftxk.plot(omega_posfreq,np.abs(dftx_posfreq),linecolor_dft,lw=2)
+    dftxk_zoom.plot(omega_posfreq_zoom,np.abs(dftx_posfreq_zoom),linecolor_dft,lw=2)
     # draw y[n]
-    yt.plot(y)
-    yt_eqdist.plot(y_eqdist,label=r'$y_{eqdist}[n]$')
+    yt.plot(y,lw=2)
+    yt_eqdist.plot(y_eqdist,lw=2,label=r'$y_{eqdist}[n]$')
     yt_eqdist.plot(y_true,'k-.',lw=3,label=r'$y_{true}[n]$')
     yt_eqdist.legend(loc='best',frameon=False)
-    dftyk.plot(omega_posfreq,np.abs(dfty_posfreq),linecolor_dft)
-    dftyk_zoom.plot(omega_posfreq_zoom,np.abs(dfty_posfreq_zoom),linecolor_dft)
+    dftyk.plot(omega_posfreq,np.abs(dfty_posfreq),linecolor_dft,lw=2)
+    dftyk_zoom.plot(omega_posfreq_zoom,np.abs(dfty_posfreq_zoom),linecolor_dft,lw=2)
 
     # equalize axis scales for circle drawing
     if max(x)-min(x)>max(y)-min(y):

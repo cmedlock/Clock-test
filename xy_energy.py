@@ -19,17 +19,17 @@ dirs = os.listdir(path)
 if not os.path.exists(path+'figs_raw'):
     os.makedirs(path+'figs_raw')
 
+# copy or command clock?
+clock_type = 'COPY'
+
 # save interesting quantities
 # fraction of energy contained in largest DFS coefficient
-Epeak_x_copy,Epeak_y_copy = [],[]
-Epeak_x_command,Epeak_y_command = [],[]
+Epeak_x,Epeak_y = [],[]
 
 # fraction of energy contained in DFS coefficients that
 # within 1 std. deviation of w = 0
-Estd_x_copy,Estd_y_copy = [],[]
-Estd_x_command,Estd_y_command = [],[]
-Ecentral_x_copy,Ecentral_y_copy = [],[]
-Ecentral_x_command,Ecentral_y_command = [],[]
+Estd_x,Estd_y = [],[]
+Ecentral_x,Ecentral_y = [],[]
 
 for fname in dirs:
     if 'Scored' not in fname:
@@ -50,22 +50,15 @@ for fname in dirs:
     if not os.path.exists(path+'figs_raw/'+fname[:len(fname)-4]):
         os.makedirs(path+'figs_raw/'+fname[:len(fname)-4])
 
-    # copy or command clock?
-    clock_type = ''
-    x_copy,y_copy,t_copy = [],[],[]
-    x_command,y_command,t_command = [],[],[]
+    x,y,t = [],[],[]
 
     # read in data
     record,found_clock = False,False
     for w in range(len(data)):
         line = data[w]
-        # found copy clock?
+        # found lock?
         if found_clock==False:
-            if 'COPY' in line:
-                clock_type = 'COPY'
-                found_clock = True
-            elif 'COMMAND' in line:
-                clock_type = 'COMMAND'
+            if clock_type in line:
                 found_clock = True
             continue
         # start recording?
@@ -74,14 +67,9 @@ for fname in dirs:
             continue
         # stop recording?
         elif record==True:
-            if 'symbol label' in line and clock_type=='COPY' and len(x_copy)>0:
-                found_clock = False
+            if 'symbol label' in line and len(x)>0:
                 record = False
-                continue
-            elif 'symbol label' in line and clock_type=='COMMAND' and len(x_command)>0:
-                found_clock = False
-                record = False
-                continue
+                break
             elif 'point' not in line:
                 continue
         # other?
@@ -93,154 +81,78 @@ for fname in dirs:
         xcoord = double(line[3])
         ycoord = double(line[1])
         timestamp = double(line[7])
-        if clock_type=='COPY':
-            x_copy.append(xcoord)
-            y_copy.append(ycoord)
-            t_copy.append(timestamp)
-        elif clock_type=='COMMAND':
-            x_command.append(xcoord)
-            y_command.append(ycoord)
-            t_command.append(timestamp)
-        else:
-            print 'not a valid clock type'
+        x.append(xcoord)
+        y.append(ycoord)
+        t.append(timestamp)
     
     f.close()
 
-    x_copy,y_copy,t_copy = np.array(x_copy),np.array(y_copy),np.array(t_copy)
-    x_command,y_command,t_command = np.array(x_command),np.array(y_command),np.array(t_command)
+    x,y,t = np.array(x),np.array(y),np.array(t)
 
     # subtract mean values (zm = zero mean)
-    x_copy_zm,y_copy_zm = x_copy-mean(x_copy),y_copy-mean(y_copy)
-    x_command_zm,y_command_zm = x_command-mean(x_command),y_command-mean(y_command)
+    x_zm,y_zm = x-mean(x),y-mean(y)
     
     # dft's
-    dft_size_copy,dft_size_command = len(x_copy),len(x_command)
-    k_copy,k_command = np.arange(dft_size_copy),np.arange(dft_size_command)
-    dftx_copy,dfty_copy = np.fft.fft(x_copy_zm,n=dft_size_copy),np.fft.fft(y_copy_zm,n=dft_size_copy)
-    dftx_command,dfty_command = np.fft.fft(x_command_zm,n=dft_size_command),np.fft.fft(y_command_zm,n=dft_size_command)
+    dft_size = len(x)
+    k = np.arange(dft_size)
+    dftx,dfty = np.fft.fft(x_zm,n=dft_size),np.fft.fft(y_zm,n=dft_size)
     
     # k_near_pi is the smallest k value for which w_k = 2*pi*k/N is
     # greater than or equal to pi
-    k_near_pi_copy,k_near_pi_command = 0,0
-    if dft_size_copy%2==0:
-        k_near_pi_copy = dft_size_copy/2+1
+    k_near_pi = 0
+    if dft_size%2==0:
+        k_near_pi = dft_size/2+1
     else:
-        k_near_pi_copy = math.ceil(dft_size_copy/2)
-    if dft_size_command%2==0:
-        k_near_pi_command = dft_size_command/2+1
-    else:
-        k_near_pi_command = math.ceil(dft_size_command/2)
+        k_near_pi = math.ceil(dft_size/2)
     
     # center the coefficients around w = 0
-    k_centered_copy = np.linspace(-dft_size_copy/2,dft_size_copy/2,dft_size_copy)
-    dftx_centered_copy = np.concatenate((dftx_copy[k_near_pi_copy:],dftx_copy[:k_near_pi_copy]))
-    dfty_centered_copy = np.concatenate((dfty_copy[k_near_pi_copy:],dfty_copy[:k_near_pi_copy]))
+    k_centered = np.linspace(-dft_size/2,dft_size/2,dft_size)
+    dftx_centered = np.concatenate((dftx[k_near_pi:],dftx[:k_near_pi]))
+    dfty_centered = np.concatenate((dfty[k_near_pi:],dfty[:k_near_pi]))
     
-    k_centered_command = np.linspace(-dft_size_command/2,dft_size_copy/2,dft_size_command)
-    dftx_centered_command = np.concatenate((dftx_command[k_near_pi_command:],dftx_command[:k_near_pi_command]))
-    dfty_centered_command = np.concatenate((dfty_command[k_near_pi_command:],dfty_command[:k_near_pi_command]))
-
     # percent energy in peak
-    # copy clocks
-    Ex_copy,Ey_copy = np.abs(dftx_centered_copy)**2,np.abs(dfty_centered_copy)**2
-    Ex_total_copy,Ey_total_copy = sum(Ex_copy),sum(Ey_copy)
-    Ex_peak_copy,Ey_peak_copy = 2*max(Ex_copy)/Ex_total_copy,2*max(Ey_copy)/Ey_total_copy
-    Epeak_x_copy.append((ftype,Ex_peak_copy))
-    Epeak_y_copy.append((ftype,Ey_peak_copy))
-
-    # command clocks
-    Ex_command,Ey_command = np.abs(dftx_centered_command)**2,np.abs(dfty_centered_command)**2
-    Ex_total_command,Ey_total_command = sum(Ex_command),sum(Ey_command)
-    Ex_peak_command,Ey_peak_command = 2*max(Ex_command)/Ex_total_command,2*max(Ey_command)/Ey_total_command
-    Epeak_x_command.append((ftype,Ex_peak_command))
-    Epeak_y_command.append((ftype,Ey_peak_command))
+    Ex,Ey = np.abs(dftx_centered)**2,np.abs(dfty_centered)**2
+    Ex_total,Ey_total = sum(Ex),sum(Ey)
+    Ex_peak,Ey_peak = 2*max(Ex)/Ex_total,2*max(Ey)/Ey_total
+    Epeak_x.append((ftype,Ex_peak))
+    Epeak_y.append((ftype,Ey_peak))
 
     # percent energy within 1 std. deviation of the center of the energy distribution
-    # copy clocks
-    # percent energy within 1 std. deviation of the center of the energy distribution
-    Ex_var_copy,Ey_var_copy = 0,0
-    for w in range(dft_size_copy):
-        Ex_var_copy += k_centered_copy[w]**2*Ex_copy[w]/Ex_total_copy
-        Ey_var_copy += k_centered_copy[w]**2*Ey_copy[w]/Ey_total_copy
-    Ex_std_copy,Ey_std_copy = math.sqrt(Ex_var_copy),math.sqrt(Ey_var_copy)
-    Estd_x_copy.append((ftype,Ex_std_copy))
-    Estd_y_copy.append((ftype,Ey_std_copy))
+    Ex_var,Ey_var = 0,0
+    for w in range(dft_size):
+        Ex_var += k_centered[w]**2*Ex[w]/Ex_total
+        Ey_var += k_centered[w]**2*Ey[w]/Ey_total
+    Ex_std,Ey_std = math.sqrt(Ex_var),math.sqrt(Ey_var)
+    Estd_x.append((ftype,Ex_std))
+    Estd_y.append((ftype,Ey_std))
     
-    Ex_central_copy,Ey_central_copy = 0,0
-    for d in range(dft_size_copy):
-        if abs((dft_size_copy-1)/2-d)<=Ex_std_copy:
-            Ex_central_copy += Ex_copy[d]/Ex_total_copy
-        if abs((dft_size_copy-1)/2-d)<=Ey_std_copy:
-            Ey_central_copy += Ey_copy[d]/Ey_total_copy
-    Ecentral_x_copy.append((ftype,Ex_central_copy))
-    Ecentral_y_copy.append((ftype,Ey_central_copy))
-
-    # command clocks
-    Ex_var_command,Ey_var_command = 0,0
-    for w in range(dft_size_command):
-        Ex_var_command += k_centered_command[w]**2*Ex_command[w]/Ex_total_command
-        Ey_var_command += k_centered_command[w]**2*Ey_command[w]/Ey_total_command
-    Ex_std_command,Ey_std_command = math.sqrt(Ex_var_command),math.sqrt(Ey_var_command)
-    Estd_x_command.append((ftype,Ex_std_command))
-    Estd_y_command.append((ftype,Ey_std_command))
-    
-    Ex_central_command,Ey_central_command = 0,0
-    for d in range(dft_size_command):
-        if abs((dft_size_command-1)/2-d)<=Ex_std_command:
-            Ex_central_command += Ex_command[d]/Ex_total_command
-        if abs((dft_size_command-1)/2-d)<=Ey_std_command:
-            Ey_central_command += Ey_command[d]/Ey_total_command
-    Ecentral_x_command.append((ftype,Ex_central_command))
-    Ecentral_y_command.append((ftype,Ey_central_command))
+    Ex_central,Ey_central = 0,0
+    for d in range(dft_size):
+        if abs((dft_size-1)/2-d)<=Ex_std:
+            Ex_central += Ex[d]/Ex_total
+        if abs((dft_size-1)/2-d)<=Ey_std:
+            Ey_central += Ey[d]/Ey_total
+    Ecentral_x.append((ftype,Ex_central))
+    Ecentral_y.append((ftype,Ey_central))
 
 # compare energy properties for the drawings of healthy vs. impaired patients
-binedges = ct.get_bins(Epeak_x_copy,nbins=10)
-ct.make_hist([elt[1] for elt in Epeak_x_copy if elt[0]=='healthy'],
-             [elt[1] for elt in Epeak_x_copy if elt[0]=='impaired'],
-             binedges,'Fraction of Energy in Largest DFS Coefficient','Epeak_x_copy',path)
-binedges = ct.get_bins(Epeak_y_copy,nbins=10)
-ct.make_hist([elt[1] for elt in Epeak_y_copy if elt[0]=='healthy'],
-             [elt[1] for elt in Epeak_y_copy if elt[0]=='impaired'],
-             binedges,'Fraction of Energy in Largest DFS Coefficient','Epeak_y_copy',path)
-binedges = ct.get_bins(Epeak_x_command,nbins=10)
-ct.make_hist([elt[1] for elt in Epeak_x_command if elt[0]=='healthy'],
-             [elt[1] for elt in Epeak_x_command if elt[0]=='impaired'],
-             binedges,'Fraction of Energy in Largest DFS Coefficient','Epeak_x_command',path)
-binedges = ct.get_bins(Epeak_y_command,nbins=10)
-ct.make_hist([elt[1] for elt in Epeak_y_command if elt[0]=='healthy'],
-             [elt[1] for elt in Epeak_y_command if elt[0]=='impaired'],
-             binedges,'Fraction of Energy in Largest DFS Coefficient','Epeak_y_command',path)
+ct.make_hist([elt[1] for elt in Epeak_x if elt[0]=='healthy'],
+             [elt[1] for elt in Epeak_x if elt[0]=='impaired'],
+             10,'Fraction of Energy in Largest DFS Coefficient','Epeak_x_'+clock_type,path)
+ct.make_hist([elt[1] for elt in Epeak_y if elt[0]=='healthy'],
+             [elt[1] for elt in Epeak_y if elt[0]=='impaired'],
+             10,'Fraction of Energy in Largest DFS Coefficient','Epeak_y_'+clock_type,path)
 
-binedges = ct.get_bins(Estd_x_copy,nbins=10)
-ct.make_hist([elt[1] for elt in Estd_x_copy if elt[0]=='healthy'],
-             [elt[1] for elt in Estd_x_copy if elt[0]=='impaired'],
-             binedges,'Std. Deviation of Energy Distribution','Estd_x_copy',path)
-binedges = ct.get_bins(Estd_y_copy,nbins=10)
-ct.make_hist([elt[1] for elt in Estd_y_copy if elt[0]=='healthy'],
-             [elt[1] for elt in Estd_y_copy if elt[0]=='impaired'],
-             binedges,'Std. Deviation of Energy Distribution','Estd_y_copy',path)
-binedges = ct.get_bins(Estd_x_command,nbins=10)
-ct.make_hist([elt[1] for elt in Estd_x_command if elt[0]=='healthy'],
-             [elt[1] for elt in Estd_x_command if elt[0]=='impaired'],
-             binedges,'Std. Deviation of Energy Distribution','Estd_x_command',path)
-binedges = ct.get_bins(Estd_y_command,nbins=10)
-ct.make_hist([elt[1] for elt in Estd_y_command if elt[0]=='healthy'],
-             [elt[1] for elt in Estd_y_command if elt[0]=='impaired'],
-             binedges,'Std. Deviation of Energy Distribution','Estd_y_command',path)
+ct.make_hist([elt[1] for elt in Estd_x if elt[0]=='healthy'],
+             [elt[1] for elt in Estd_x if elt[0]=='impaired'],
+             10,'Std. Deviation of Energy Distribution','Estd_x_'+clock_type,path)
+ct.make_hist([elt[1] for elt in Estd_y if elt[0]=='healthy'],
+             [elt[1] for elt in Estd_y if elt[0]=='impaired'],
+             10,'Std. Deviation of Energy Distribution','Estd_y_'+clock_type,path)
 
-binedges = ct.get_bins(Ecentral_x_copy,nbins=10)
-ct.make_hist([elt[1] for elt in Ecentral_x_copy if elt[0]=='healthy'],
-             [elt[1] for elt in Ecentral_x_copy if elt[0]=='impaired'],
-             binedges,'Fraction of Energy w/in 1 Std.Dev. of w = 0','Ecentral_x_copy',path)
-binedges = ct.get_bins(Ecentral_y_copy,nbins=10)
-ct.make_hist([elt[1] for elt in Ecentral_y_copy if elt[0]=='healthy'],
-             [elt[1] for elt in Ecentral_y_copy if elt[0]=='impaired'],
-             binedges,'Fraction of Energy w/in 1 Std.Dev. of w = 0','Ecentral_y_copy',path)
-binedges = ct.get_bins(Ecentral_x_command,nbins=10)
-ct.make_hist([elt[1] for elt in Ecentral_x_command if elt[0]=='healthy'],
-             [elt[1] for elt in Ecentral_x_command if elt[0]=='impaired'],
-             binedges,'Fraction of Energy w/in 1 Std.Dev. of w = 0','Ecentral_x_command',path)
-binedges = ct.get_bins(Ecentral_y_command,nbins=10)
-ct.make_hist([elt[1] for elt in Ecentral_y_command if elt[0]=='healthy'],
-             [elt[1] for elt in Ecentral_y_command if elt[0]=='impaired'],
-             binedges,'Fraction of Energy w/in 1 Std.Dev. of w = 0','Ecentral_y_command',path)
+ct.make_hist([elt[1] for elt in Ecentral_x if elt[0]=='healthy'],
+             [elt[1] for elt in Ecentral_x if elt[0]=='impaired'],
+             10,'Fraction of Energy w/in 1 Std.Dev. of w = 0','Ecentral_x_'+clock_type,path)
+ct.make_hist([elt[1] for elt in Ecentral_y if elt[0]=='healthy'],
+             [elt[1] for elt in Ecentral_y if elt[0]=='impaired'],
+             10,'Fraction of Energy w/in 1 Std.Dev. of w = 0','Ecentral_y_'+clock_type,path)
