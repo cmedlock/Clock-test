@@ -25,29 +25,25 @@ x = np.concatenate((x[3:],x[:3])) # shift so that x[0] is non-zero
 rxx = []
 for w in range(2*len(x)-1):
     val = 0
-    if w<5:
-        print 'w = ',w
     for d in range(len(x)):
         if -1<99-w+d<100:
-            if w<5:
-                print '***  ',d,99-w+d
             val += x[d]*x[99-w+d]
     rxx.append(val)
 
 # model order
-#p = 1 # Ediff =  51.5207233409
+#p = 1 # Ediff =  51.5207233409, fraction of E_g in g[0] =  0.0483132763136
 #W = rxx[99]
 #D = rxx[100]
-p = 2 # Ediff =  57.5531258058
-W = np.array([[rxx[99],rxx[100]],[rxx[100],rxx[99]]])
-D = np.array([[rxx[100]],[rxx[101]]])
-#p = 3 # Ediff = 63.76142098
+#p = 2 # Ediff =  57.5531258058, fraction of E_g in g[0] =  0.267285704985
+#W = np.array([[rxx[99],rxx[100]],[rxx[100],rxx[99]]])
+#D = np.array([[rxx[100]],[rxx[101]]])
+#p = 3 # Ediff = 63.76142098, fraction of E_g in g[0] =  0.226132145318
 #W = np.array([[rxx[99],rxx[100],rxx[101]],[rxx[100],rxx[99],rxx[109]],[rxx[191],rxx[109],rxx[99]]])
 #D = np.array([[rxx[100]],[rxx[101]],[rxx[102]]])
-#p = 4 # Ediff =  107.494904876
-#W = np.array([[rxx[99],rxx[100],rxx[101],rxx[102]],[rxx[100],rxx[99],rxx[100],rxx[101]],[rxx[101],rxx[100],rxx[99],rxx[100]],
-#             [rxx[102],rxx[101],rxx[100],rxx[99]]])
-#D = np.array([[rxx[100]],[rxx[101]],[rxx[102]],[rxx[103]]])
+p = 4 # Ediff =  107.494904876, fraction of E_g in g[0] =  0.382450318357
+W = np.array([[rxx[99],rxx[100],rxx[101],rxx[102]],[rxx[100],rxx[99],rxx[100],rxx[101]],[rxx[101],rxx[100],rxx[99],rxx[100]],
+             [rxx[102],rxx[101],rxx[100],rxx[99]]])
+D = np.array([[rxx[100]],[rxx[101]],[rxx[102]],[rxx[103]]])
 
 if p>1:
     W_inv = np.linalg.inv(W)
