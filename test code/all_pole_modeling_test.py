@@ -31,19 +31,31 @@ for w in range(2*len(x)-1):
     rxx.append(val)
 
 # model order
-#p = 1 # Ediff =  51.5207233409, fraction of E_g in g[0] =  0.0483132763136
-#W = rxx[99]
-#D = rxx[100]
-#p = 2 # Ediff =  57.5531258058, fraction of E_g in g[0] =  0.267285704985
+# Ediff =  51.5207233409
+# fraction of E_g in g[0] =  0.0483132763136
+# mean squared diff btwn g[n] and delta[n] =  17.8196248872
+p = 1
+W = rxx[99]
+D = rxx[100]
+# Ediff =  57.5531258058
+# fraction of E_g in g[0] =  0.267285704985
+# mean squared diff btwn g[n] and delta[n] =  2.48193811687
+#p = 2
 #W = np.array([[rxx[99],rxx[100]],[rxx[100],rxx[99]]])
 #D = np.array([[rxx[100]],[rxx[101]]])
-#p = 3 # Ediff = 63.76142098, fraction of E_g in g[0] =  0.226132145318
+# Ediff = 63.76142098
+# fraction of E_g in g[0] =  0.226132145318
+# mean squared diff btwn g[n] and delta[n] =  3.09779815172
+#p = 3
 #W = np.array([[rxx[99],rxx[100],rxx[101]],[rxx[100],rxx[99],rxx[109]],[rxx[191],rxx[109],rxx[99]]])
 #D = np.array([[rxx[100]],[rxx[101]],[rxx[102]]])
-p = 4 # Ediff =  107.494904876, fraction of E_g in g[0] =  0.382450318357
-W = np.array([[rxx[99],rxx[100],rxx[101],rxx[102]],[rxx[100],rxx[99],rxx[100],rxx[101]],[rxx[101],rxx[100],rxx[99],rxx[100]],
-             [rxx[102],rxx[101],rxx[100],rxx[99]]])
-D = np.array([[rxx[100]],[rxx[101]],[rxx[102]],[rxx[103]]])
+# Ediff =  107.494904876
+# fraction of E_g in g[0] =  0.382450318357
+# mean squared diff btwn g[n] and delta[n] =  1.46292225114
+#p = 4
+#W = np.array([[rxx[99],rxx[100],rxx[101],rxx[102]],[rxx[100],rxx[99],rxx[100],rxx[101]],[rxx[101],rxx[100],rxx[99],rxx[100]],
+#             [rxx[102],rxx[101],rxx[100],rxx[99]]])
+#D = np.array([[rxx[100]],[rxx[101]],[rxx[102]],[rxx[103]]])
 
 if p>1:
     W_inv = np.linalg.inv(W)
@@ -67,6 +79,7 @@ for w in range(len(x)+p):
     g.append(val)
 g = np.array(g)
 print 'fraction of E_g in g[0] = ',g[0]**2/sum(g**2)
+print 'mean squared diff btwn g[n] and delta[n] = ',(g[0]-1)**2+sum(g[1:]**2)
 
 # plot zeros of linear prediction filter
 zeros = 1/np.roots(a[::-1])

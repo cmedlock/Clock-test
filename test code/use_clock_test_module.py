@@ -25,12 +25,8 @@ for fname in dirs[:3]:
 
     # get coordinates and timestamps
     x_copy,y_copy,p_copy,t_copy,x_command,y_command,p_command,t_command = ct.parse_file(fname,path)
-    print '\n',len(x_copy),len(y_copy)
-    #print len(x_command),len(y_command),'\n'
     
     # interpolate to find missing points if necessary
-    # for testing purposes, can remove a point from x_copy
-    #x_copy[5] = -5 # a point on the left
     x_copy,y_copy,p_copy = ct.interpolate(x_copy),ct.interpolate(y_copy),ct.interpolate(p_copy)
     x_command,y_command,p_command = ct.interpolate(x_command),ct.interpolate(y_command),ct.interpolate(p_command)
 
@@ -67,11 +63,11 @@ for fname in dirs[:3]:
     k = np.arange(dft_size)
     freq = 2*np.pi/dft_size*k
     # copy clocks
-    #ct.plot_xyt_other(x_copy,t_copy-t_copy[0],'x','time [ms]',np.abs(dftx_copy)[:dft_size/2],k[:dft_size/2],'|X[k]|','k',True,'dftx_copy',fname,path)
-    #ct.plot_xyt_other(y_copy,t_copy-t_copy[0],'y','time [ms]',np.abs(dfty_copy)[:dft_size/2],k[:dft_size/2],'|Y[k]|','k',True,'dfty_copy',fname,path)
+    ct.plot_xyt_other(x_copy,t_copy-t_copy[0],'x','time [ms]',np.abs(dftx_copy)[:dft_size/2],k[:dft_size/2],'|X[k]|','k',True,'dftx_copy',fname,path)
+    ct.plot_xyt_other(y_copy,t_copy-t_copy[0],'y','time [ms]',np.abs(dfty_copy)[:dft_size/2],k[:dft_size/2],'|Y[k]|','k',True,'dfty_copy',fname,path)
     
     # plot pressure
-    ct.draw_clock(t_copy-t_copy[0],p_copy,'time [ms]','pressure','pressure_copy',fname,path)
-    ct.draw_clock(t_command-t_command[0],p_command,'time [ms]','pressure','pressure_command',fname,path)
+    #ct.draw_clock(t_copy-t_copy[0],p_copy,'time [ms]','pressure','pressure_copy',fname,path)
+    #ct.draw_clock(t_command-t_command[0],p_command,'time [ms]','pressure','pressure_command',fname,path)
     
 print 'Done'

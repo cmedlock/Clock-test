@@ -34,7 +34,7 @@ if not os.path.exists(path+'figs_raw'):
 corr_x,corr_y = [],[]
 Ediff_x,Ediff_y = [],[]
 
-for fname in dirs:
+for fname in dirs[:4]:
     if 'Scored' not in fname:
         continue
     print 'reading file ',fname,'...'
@@ -61,7 +61,7 @@ for fname in dirs:
     record,found_clock = False,False
     for w in range(len(data)):
         line = data[w]
-        # found copy clock?
+        # found clock?
         if found_clock==False:
             if clock_type in line:
                 found_clock = True
@@ -147,6 +147,8 @@ for fname in dirs:
         x_eqdist.append(x_interp[idx])
         y_eqdist.append(y_interp[idx])
     x_eqdist,y_eqdist = np.array(x_eqdist)-x_eqdist[0],np.array(y_eqdist)-y_eqdist[0]
+    # normalize to unit energy, so can compare between drawings
+    x_eqdist,y_eqdist = x_eqdist/sum(x_eqdist**2),y_eqdist/sum(y_eqdist**2)
 
     # now want to estimate the frequency of the underlying sinusoid
     # subtract mean values (zm = zero mean)
@@ -209,7 +211,6 @@ for fname in dirs:
     amp_y = (max(y_eqdist)-min(y_eqdist))/2
     x_true = amp_x*x_true
     y_true = amp_y*y_true
-    #x_true,y_true = x_true-x_true[0],y_true-y_true[0]
     x_true,y_true = x_true+min(x_eqdist)-min(x_true),y_true+min(y_eqdist)-min(y_true)
     
     # compute and save correlation between the two
@@ -271,6 +272,21 @@ for fname in dirs:
     omega_posfreq_zoom = omega_zoom[:k_zoom_near_pi]
     dftx_posfreq_zoom,dfty_posfreq_zoom = dftx_zoom[:k_zoom_near_pi],dfty_zoom[:k_zoom_near_pi]
 
+    # plot circle in polar coordinates
+    # find COM
+    x_com = np.mean(x_eqdist)
+    y_com = np.mean(y_eqdist)
+
+    # get r and theta
+    r,theta = [],[]
+    for w in range(len(x_eqdist)):
+        dx,dy = x_eqdist[w]-x_com,y_eqdist[w]-y_com
+        dist = sqrt(dx**2+dy**2)
+        angle = math.atan2(dy,dx)
+        r.append(dist)
+        theta.append(angle)
+    r,theta = np.array(r),np.array(theta)
+
     # figure settings
     linecolor_xy = 'blue'
     linecolor_dft = 'red'
@@ -278,11 +294,11 @@ for fname in dirs:
     y_axis_fontsize = 20
 
     # initialize figures
-    fig_xt,fig_yt,fig_xy = plt.figure(),plt.figure(),plt.figure()
+    fig_xt,fig_yt,fig_xy,fig_rtheta = plt.figure(),plt.figure(),plt.figure(),plt.figure()
     fig_xt.subplots_adjust(hspace=0.6,left=0.15)
     fig_yt.subplots_adjust(hspace=0.6,left=0.15)
     # declare subplots
-    xt,yt,xy = fig_xt.add_subplot(411),fig_yt.add_subplot(411),fig_xy.add_subplot(111)
+    xt,yt,xy,rtheta = fig_xt.add_subplot(411),fig_yt.add_subplot(411),fig_xy.add_subplot(111),fig_rtheta.add_subplot(111)
     xt_eqdist,yt_eqdist = fig_xt.add_subplot(412),fig_yt.add_subplot(412)
     dftxk,dftyk = fig_xt.add_subplot(413),fig_yt.add_subplot(413)
     dftxk_zoom,dftyk_zoom = fig_xt.add_subplot(414),fig_yt.add_subplot(414)
@@ -290,6 +306,9 @@ for fname in dirs:
     xy.plot(x,y,lw=2,label='$x[n],y[n]$')
     xy.plot(x_true,y_true,'k-.',lw=3,label='$x_{true}[n],y_{true}[n]$')
     xy.legend(loc='best',frameon=False,fontsize=20)
+    # draw circles in polar coordinates
+    rtheta.plot(theta,r*10**4,label=r'$\theta[n],r[n]$')
+    rtheta.legend(loc='best',frameon=False,fontsize=20)
     # draw x[n]
     xt.plot(x,lw=2)
     xt_eqdist.plot(x_eqdist,lw=2,label=r'$x_{eqdist}[n]$')
@@ -336,6 +355,9 @@ for fname in dirs:
     # set axis labels
     xy.set_xlabel(r'$x$',fontsize=x_axis_fontsize)
     xy.set_ylabel(r'$y$',fontsize=y_axis_fontsize)
+
+    rtheta.set_xlabel(r'$\theta$',fontsize=x_axis_fontsize)
+    rtheta.set_ylabel(r'$r \times 10^4 $',fontsize=y_axis_fontsize)
 
     xt.set_xlabel(r'$n$',fontsize=x_axis_fontsize)
     xt.set_ylabel(r'$x[n]$',color=linecolor_xy,fontsize=y_axis_fontsize)
@@ -391,6 +413,7 @@ for fname in dirs:
 
     # save figures
     fig_xy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/xy_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+    fig_rtheta.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/xy_polar_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
     fig_xt.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/x_true_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
     fig_yt.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/y_true_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
 

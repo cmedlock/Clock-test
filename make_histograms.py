@@ -1,3 +1,5 @@
+# make histograms of some interesting quantities to compare between the
+# drawings of healhty and impaired patients
 import math
 import matplotlib
 import matplotlib.pyplot as plt
@@ -25,12 +27,14 @@ mean_vely_command,mean_accy_command,stddev_vely_command,stddev_accy_command = []
 mean_pressure_command,stddev_pressure_command = [],[]
 relsidelobe_x_command,relsidelobe_y_command = [],[]
 
+# dictionary mapping each file to the quantities above for use in MLE estimation
+
 for fname in dirs:
     
     if 'Scored' not in fname:
         continue
-    ftype = ''
 
+    ftype = ''
     if 'YDU' in fname:
         ftype = 'healthy'
     elif 'CIN' in fname:
@@ -38,9 +42,6 @@ for fname in dirs:
     else:
         print 'not a valid file name'
         
-    if not os.path.exists(path+'figs_raw/'+fname[:len(fname)-4]):
-        os.makedirs(path+'figs_raw/'+fname[:len(fname)-4])
-
     # get coordinates and timestamps
     x_copy,y_copy,p_copy,t_copy,x_command,y_command,p_command,t_command = ct.parse_file(fname,path)
     
@@ -100,100 +101,76 @@ for fname in dirs:
 
 # compare quantities from drawings of healthy and impaired patients
 # copy clocks
-binedges = ct.get_bins(mean_velx_copy,nbins=10)
 ct.make_hist([elt[1] for elt in mean_velx_copy if elt[0]=='healthy'],
              [elt[1] for elt in mean_velx_copy if elt[0]=='impaired'],
-             binedges,'Mean x Velocity','mean_velx_copy',path)
-binedges = ct.get_bins(mean_vely_copy,nbins=10)
+             10,'Mean x Velocity','mean_velx_copy',path)
 ct.make_hist([elt[1] for elt in mean_vely_copy if elt[0]=='healthy'],
              [elt[1] for elt in mean_vely_copy if elt[0]=='impaired'],
-             binedges,'Mean y Velocity','mean_vely_copy',path)
-binedges = ct.get_bins(stddev_velx_copy,nbins=10)
+             10,'Mean y Velocity','mean_vely_copy',path)
 ct.make_hist([elt[1] for elt in stddev_velx_copy if elt[0]=='healthy'],
              [elt[1] for elt in stddev_velx_copy if elt[0]=='impaired'],
-             binedges,'Standard Deviation of x Velocity','stddev_velx_copy',path)
-binedges = ct.get_bins(stddev_vely_copy,nbins=10)
+             10,'Standard Deviation of x Velocity','stddev_velx_copy',path)
 ct.make_hist([elt[1] for elt in stddev_vely_copy if elt[0]=='healthy'],
              [elt[1] for elt in stddev_vely_copy if elt[0]=='impaired'],
-             binedges,'Standard Deviation of y Velocity','stddev_vely_copy',path)
-binedges = ct.get_bins(mean_accx_copy,nbins=10)
+             10,'Standard Deviation of y Velocity','stddev_vely_copy',path)
 ct.make_hist([elt[1] for elt in mean_accx_copy if elt[0]=='healthy'],
              [elt[1] for elt in mean_accx_copy if elt[0]=='impaired'],
-             binedges,'Mean x Acceleration','mean_accx_copy',path)
-binedges = ct.get_bins(mean_accy_copy,nbins=10)
+             10,'Mean x Acceleration','mean_accx_copy',path)
 ct.make_hist([elt[1] for elt in mean_accy_copy if elt[0]=='healthy'],
              [elt[1] for elt in mean_accy_copy if elt[0]=='impaired'],
-             binedges,'Mean y Acceleration','mean_accy_copy',path)
-binedges = ct.get_bins(stddev_accx_copy,nbins=10)
+             10,'Mean y Acceleration','mean_accy_copy',path)
 ct.make_hist([elt[1] for elt in stddev_accx_copy if elt[0]=='healthy'],
              [elt[1] for elt in stddev_accx_copy if elt[0]=='impaired'],
-             binedges,'Standard Deviation of x Acceleration','stddev_accx_copy',path)
-binedges = ct.get_bins(stddev_accy_copy,nbins=10)
+             10,'Standard Deviation of x Acceleration','stddev_accx_copy',path)
 ct.make_hist([elt[1] for elt in stddev_accy_copy if elt[0]=='healthy'],
              [elt[1] for elt in stddev_accy_copy if elt[0]=='impaired'],
-             binedges,'Standard Deviation of y Acceleration','stddev_accy_copy',path)
-binedges = ct.get_bins(mean_pressure_copy,nbins=10)
+             10,'Standard Deviation of y Acceleration','stddev_accy_copy',path)
 ct.make_hist([elt[1] for elt in mean_pressure_copy if elt[0]=='healthy'],
              [elt[1] for elt in mean_pressure_copy if elt[0]=='impaired'],
-             binedges,'Average Pressure','mean_pressure_copy',path)
-binedges = ct.get_bins(stddev_pressure_copy,nbins=10)
+             10,'Average Pressure','mean_pressure_copy',path)
 ct.make_hist([elt[1] for elt in stddev_pressure_copy if elt[0]=='healthy'],
              [elt[1] for elt in stddev_pressure_copy if elt[0]=='impaired'],
-             binedges,'Standard Deviation of Pressure','stddev_pressure_copy',path)
-binedges = ct.get_bins(relsidelobe_x_copy,nbins=10)
+             10,'Standard Deviation of Pressure','stddev_pressure_copy',path)
 ct.make_hist([elt[1] for elt in relsidelobe_x_copy if elt[0]=='healthy'],
              [elt[1] for elt in relsidelobe_x_copy if elt[0]=='impaired'],
-             binedges,'Relative Side Lobe Amplitude [dB] for X[k]','relsidelobeamplitude_x_copy',path)
-binedges = ct.get_bins(relsidelobe_y_copy,nbins=10)
+             10,'Relative Side Lobe Amplitude [dB] for X[k]','relsidelobeamplitude_x_copy',path)
 ct.make_hist([elt[1] for elt in relsidelobe_y_copy if elt[0]=='healthy'],
              [elt[1] for elt in relsidelobe_y_copy if elt[0]=='impaired'],
-             binedges,'Relative Side Lobe Amplitude [dB] for Y[k]','relsidelobeamplitude_y_copy',path)
+             10,'Relative Side Lobe Amplitude [dB] for Y[k]','relsidelobeamplitude_y_copy',path)
 # command clocks
-binedges = ct.get_bins(mean_velx_command,nbins=10)
 ct.make_hist([elt[1] for elt in mean_velx_command if elt[0]=='healthy'],
              [elt[1] for elt in mean_velx_command if elt[0]=='impaired'],
-             binedges,'Mean x Velocity','mean_velx_command',path)
-binedges = ct.get_bins(mean_vely_command,nbins=10)
+             10,'Mean x Velocity','mean_velx_command',path)
 ct.make_hist([elt[1] for elt in mean_vely_command if elt[0]=='healthy'],
              [elt[1] for elt in mean_vely_command if elt[0]=='impaired'],
-             binedges,'Mean y Velocity','mean_vely_command',path)
-binedges = ct.get_bins(stddev_velx_command,nbins=10)
+             10,'Mean y Velocity','mean_vely_command',path)
 ct.make_hist([elt[1] for elt in stddev_velx_command if elt[0]=='healthy'],
              [elt[1] for elt in stddev_velx_command if elt[0]=='impaired'],
-             binedges,'Standard Deviation of x Velocity','stddev_velx_command',path)
-binedges = ct.get_bins(stddev_vely_command,nbins=10)
+             10,'Standard Deviation of x Velocity','stddev_velx_command',path)
 ct.make_hist([elt[1] for elt in stddev_vely_command if elt[0]=='healthy'],
              [elt[1] for elt in stddev_vely_command if elt[0]=='impaired'],
-             binedges,'Standard Deviation of y Velocity','stddev_vely_command',path)
-binedges = ct.get_bins(mean_accx_command,nbins=10)
+             10,'Standard Deviation of y Velocity','stddev_vely_command',path)
 ct.make_hist([elt[1] for elt in mean_accx_command if elt[0]=='healthy'],
              [elt[1] for elt in mean_accx_command if elt[0]=='impaired'],
-             binedges,'Mean x Acceleration','mean_accx_command',path)
-binedges = ct.get_bins(mean_accy_command,nbins=10)
+             10,'Mean x Acceleration','mean_accx_command',path)
 ct.make_hist([elt[1] for elt in mean_accy_command if elt[0]=='healthy'],
              [elt[1] for elt in mean_accy_command if elt[0]=='impaired'],
-             binedges,'Mean y Acceleration','mean_accy_command',path)
-binedges = ct.get_bins(stddev_accx_command,nbins=10)
+             10,'Mean y Acceleration','mean_accy_command',path)
 ct.make_hist([elt[1] for elt in stddev_accx_command if elt[0]=='healthy'],
              [elt[1] for elt in stddev_accx_command if elt[0]=='impaired'],
-             binedges,'Standard Deviation of x Acceleration','stddev_accx_command',path)
-binedges = ct.get_bins(stddev_accy_command,nbins=10)
+             10,'Standard Deviation of x Acceleration','stddev_accx_command',path)
 ct.make_hist([elt[1] for elt in stddev_accy_command if elt[0]=='healthy'],
              [elt[1] for elt in stddev_accy_command if elt[0]=='impaired'],
-             binedges,'Standard Deviation of y Acceleration','stddev_accy_command',path)
-binedges = ct.get_bins(mean_pressure_command,nbins=10)
+             10,'Standard Deviation of y Acceleration','stddev_accy_command',path)
 ct.make_hist([elt[1] for elt in mean_pressure_command if elt[0]=='healthy'],
              [elt[1] for elt in mean_pressure_command if elt[0]=='impaired'],
-             binedges,'Average Pressure','mean_pressure_command',path)
-binedges = ct.get_bins(stddev_pressure_command,nbins=10)
+             10,'Average Pressure','mean_pressure_command',path)
 ct.make_hist([elt[1] for elt in stddev_pressure_command if elt[0]=='healthy'],
              [elt[1] for elt in stddev_pressure_command if elt[0]=='impaired'],
-             binedges,'Standard Deviation of Pressure','stddev_pressure_command',path)
-binedges = ct.get_bins(relsidelobe_x_command,nbins=10)
+             10,'Standard Deviation of Pressure','stddev_pressure_command',path)
 ct.make_hist([elt[1] for elt in relsidelobe_x_command if elt[0]=='healthy'],
              [elt[1] for elt in relsidelobe_x_command if elt[0]=='impaired'],
-             binedges,'Relative Side Lobe Amplitude [dB] for X[k]','relsidelobeamplitude_x_command',path)
-binedges = ct.get_bins(relsidelobe_y_command,nbins=10)
+             10,'Relative Side Lobe Amplitude [dB] for X[k]','relsidelobeamplitude_x_command',path)
 ct.make_hist([elt[1] for elt in relsidelobe_y_command if elt[0]=='healthy'],
              [elt[1] for elt in relsidelobe_y_command if elt[0]=='impaired'],
-             binedges,'Relative Side Lobe Amplitude [dB] for Y[k]','relsidelobeamplitude_y_command',path)
+             10,'Relative Side Lobe Amplitude [dB] for Y[k]','relsidelobeamplitude_y_command',path)

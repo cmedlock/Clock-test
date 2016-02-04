@@ -17,7 +17,6 @@ if not os.path.exists(path+'figs_raw'):
 # length of truncated sinc (longer = more accurate interpolation)
 # this code only works for even lengths
 lengths = [10,20,60,100,200,300,400,500,600,700,800,900,1000]
-#lengths = [10]
 missing_point = 1
 percent_errors = []
 
@@ -35,7 +34,7 @@ for length in lengths:
     n = np.arange(missing_point-length/2,missing_point+length/2)
     #print 'n is ',n
     x = np.sin(np.pi/6*n)
-    # 'CT signal
+    # 'CT 'signal
     ntrue = np.linspace(missing_point-length/2,missing_point+length/2,length*5)
     xtrue = np.sin(np.pi/6*ntrue)
     # remove a point
@@ -49,7 +48,6 @@ for length in lengths:
     # interpolate to find the missing points
     xintp = [elt for elt in x]
     sinc = []
-    
     # downsample then expand by 2
     # if the missing point had an even index, want to save all of the odd samples
     expanded = []

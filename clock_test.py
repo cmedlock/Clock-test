@@ -284,7 +284,8 @@ def plot_xyt_other(x,t,xname,tname,otherx,w,otherxname,wname,logplot,othername,f
         d1.set_color(linecolor_other)
     
     # save figures
-    fig_xt.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/'+othername+'_'+fname[:len(fname)-4]+'.png')
+    #fig_xt.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/'+othername+'_'+fname[:len(fname)-4]+'.png')
+    fig_xt.savefig(path+'figs_raw/'+fname+'/'+othername+'_'+fname+'.png')
     
     plt.close('all')
 
@@ -314,7 +315,7 @@ def get_bins(a,nbins):
     binedges = np.histogram(np.hstack((healthy,impaired)),bins=10)[1]
     return binedges
     
-def make_hist(healthy,impaired,binedges,nameforplot,nameforfile,path):
+def make_hist(healthy,impaired,nbins,nameforplot,nameforfile,path):
     # input: healthy,impaired (lists): lists of quantity to be compared
     #        name,fname,path: in order to save the figure
     # output: compare_name.png with histogram comparing healthy value to
@@ -322,8 +323,10 @@ def make_hist(healthy,impaired,binedges,nameforplot,nameforfile,path):
     
     fig_hist = plt.figure()
     hist = fig_hist.add_subplot(111)
-    n1,bins1,patches1 = hist.hist(healthy,bins=binedges,alpha=0.5,normed=True,label='Healthy')
-    n2,bins2,patches2 = hist.hist(impaired,bins=binedges,alpha=0.5,normed=True,label='Impaired')
+    n,bins,patches = hist.hist([healthy,impaired],nbins,histtype='bar',label=['Healthy','Impaired'])
+    n1,n2 = n[0],n[1]
+    #n1 = hist.hist(healthy,bins=binedges,histtype='bar',alpha=0.5,normed=True,label='Healthy')[0]
+    #n2 = hist.hist(impaired,bins=binedges,histtype='bar',alpha=0.5,normed=True,label='Impaired')[0]
     hist.set_ylim(top=max(max(n1),max(n2))*1.2)
     hist.legend(loc='best',frameon=False)
     

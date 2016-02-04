@@ -53,7 +53,7 @@ print 'total distance is ',sum(dists)
 
 # want to get 142 evenly-spaced points along the curve
 
-# generate a much longer array with 99 linearly-interpolated 
+# generate a much longer array with 199 linearly-interpolated 
 # points between the actual data points
 x_interp,y_interp = [],[]
 for w in range(len(x)-1):
@@ -61,9 +61,10 @@ for w in range(len(x)-1):
     y_interp.append(y[w])
     dx,dy = x[w+1]-x[w],y[w+1]-y[w]
     dist = math.sqrt(dx**2+dy**2)
-    for r in range(1,200):
-        x_new = x[w]+r*dx/200
-        y_new = y[w]+r*dy/200
+    n_segments = ceil(dist/dist_avg)*100
+    for r in range(1,int(n_segments)):
+        x_new = x[w]+r*dx/n_segments
+        y_new = y[w]+r*dy/n_segments
         x_interp.append(x_new)
         y_interp.append(y_new)
 x_interp.append(x[-1])
@@ -87,7 +88,8 @@ for k in range(len(x)-1):
     for j in range(idx,len(x_interp)-1):
         dx,dy = x_interp[j+1]-x_interp[j],y_interp[j+1]-y_interp[j]
         dist_total += math.sqrt(dx**2+dy**2)
-        if abs(dist_total-dist_avg)<0.0005:
+        #if abs(dist_total-dist_avg)<0.0005:
+        if abs(dist_total-dist_avg)<dist_avg/100.:
             idx = j+1
             break
     x_eqdist.append(x_interp[idx])

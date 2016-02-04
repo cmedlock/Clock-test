@@ -1,3 +1,4 @@
+# plot pressure as a function of time
 import math
 import matplotlib
 import matplotlib.pyplot as plt
@@ -93,6 +94,7 @@ for fname in dirs:
     
     # set axis limits
     pt_copy.set_xlim(right=max(t_copy-t_copy[0]))
+    pt_copy.set_ylim(top=max(p_copy)+20)
     
     # set titles and file labels
     title_fontsize = 20
@@ -129,6 +131,7 @@ for fname in dirs:
 
     # set axis limits
     pt_command.set_xlim(right=max(t_command-t_command[0]))
+    pt_command.set_ylim(top=max(p_command)+20)
     
     # set titles and file labels
     #xt_command.set_title('Sample Command Clock',fontsize=title_fontsize)

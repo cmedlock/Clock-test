@@ -73,8 +73,8 @@ print 'check: ',sum(x1),' = ',3*sum(x),'?'
 h1 = []
 for w in range(-100,101):
     h1.append(sinc(omega_c,w,length_of_sinc))
-dfth1 = np.fft.fft(h1,n=200)
-kh1 = np.arange(200)
+dfth1 = np.fft.fft(h1,n=bigN)
+kh1 = np.arange(bigN)
 
 # downsample by 3 (d = decimated)
 x1_d = []

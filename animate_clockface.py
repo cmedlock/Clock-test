@@ -105,6 +105,13 @@ for fname in dirs:
     xy_copy.set_xlim(min(x_copy)-10,max(x_copy)+10)
     xy_copy.set_ylim(min(y_copy)-10,max(y_copy)+10)
 
+    if 'YDU' in fname:
+        fig_xy_copy.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+    elif 'CIN' in fname:
+        fig_xy_copy.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+    else:
+        print 'not a valid filename'
+
     line, = xy_copy.plot([],[],lw=2)
     xy_copy_anim = anim.FuncAnimation(fig_xy_copy,animate,frames=len(x_copy),
                                       init_func=init_anim,fargs=(x_copy,y_copy),
@@ -121,6 +128,14 @@ for fname in dirs:
     xy_command.set_ylabel('y',fontsize=20)
     xy_command.set_xlim(min(x_command)-10,max(x_command)+10)
     xy_command.set_ylim(min(y_command)-10,max(y_command)+10)
+    
+    if 'YDU' in fname:
+        fig_xy_command.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+    elif 'CIN' in fname:
+        fig_xy_command.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+    else:
+        print 'not a valid filename'
+
     line, = xy_command.plot([],[],lw=2)
     xy_command_anim = anim.FuncAnimation(fig_xy_command,animate,frames=len(x_command),
                                       init_func=init_anim,fargs=(x_command,y_command),

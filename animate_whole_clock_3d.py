@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# make a video of the entire clock being drawin in 3 dimensions
 import math
 import matplotlib
 import matplotlib.pyplot as plt
@@ -40,15 +42,15 @@ for fname in dirs:
     # copy or command clock?
     clock_type = 'COPY'
     x,y,t = [],[],[]
+    x_temp,y_temp,t_temp = [],[],[]
 
     # read in data
     record,found_clock = False,False
     for w in range(len(data)):
         line = data[w]
-        # found copy clock?
-        if found_clock==False:
-            if clock_type in line:
-                found_clock = True
+        # found pen stroke?
+        if found_clock==False and clock_type in line:
+            found_clock = True
             continue
         # start recording?
         elif found_clock==True and 'CLOCKFACE' in line:
@@ -56,14 +58,17 @@ for fname in dirs:
             continue
         # stop recording?
         elif record==True:
-            if 'symbol label' in line and len(x)>0:
-                record = False
+            if 'RawData' in line and len(x)>0:
                 break
+            if 'symbol label' in line and len(x_temp)>0: # length requirement since sometimes there are empty strokes
+                # store previous stroke and reset lists for the next one
+                x.append(x_temp)
+                y.append(y_temp)
+                t.append(t_temp)
+                x_temp,y_temp,t_temp = [],[],[]
+                continue
             elif 'point' not in line:
                 continue
-        # done?
-        elif found_clock==False and record==False and len(x)>0:
-            break
         # other?
         else:
             continue
@@ -73,15 +78,24 @@ for fname in dirs:
         xcoord = double(line[3])
         ycoord = double(line[1])
         timestamp = double(line[7])
-        x.append(xcoord)
-        y.append(ycoord)
-        t.append(timestamp)
+        x_temp.append(xcoord)
+        y_temp.append(ycoord)
+        t_temp.append(timestamp)
     
     f.close()
 
-    x,y,t = np.array(x),np.array(y),np.array(t)-t[0]
-
-    # animate
+    # make each of x, y, and t into a single list for animation purposes
+    x_long,y_long,t_long = x[0],y[0],t[0]
+    for w in range(1,len(x)):
+        x_long = x_long+x[w]
+        y_long = y_long+y[w]
+        t_long = t_long+t[w]
+    # rename
+    x,y,t = x_long,y_long,t_long
+    # the time array should have reasonable values
+    t = (t-t[0])/10.
+    
+    # plot
     plt.close('all')
     fig_xy = plt.figure()
     fig_xy.text(0.99, 0.96, fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
@@ -91,7 +105,7 @@ for fname in dirs:
     xy.set_zlabel('t',fontsize=20)
     xy.set_xlim3d(min(x)-10,max(x)+10)
     xy.set_ylim3d(min(y)-10,max(y)+10)
-    xy.set_zlim3d(-5,len(x)+10)
+    xy.set_zlim3d(min(t)-10,max(t)+10)
 
     if 'YDU' in fname:
         fig_xy.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
@@ -100,7 +114,7 @@ for fname in dirs:
     else:
         print 'not a valid filename'
 
-    data = [np.array([x,y,np.arange(len(x))])]
+    data = [np.array([x,y,t])]
     lines = [xy.plot(dat[0, 0:1], dat[1, 0:1], dat[2, 0:1])[0] for dat in data]
 
     xy_anim = anim.FuncAnimation(fig_xy, update_lines, len(x), fargs=(data, lines), interval=50, blit=False)
@@ -108,4 +122,3 @@ for fname in dirs:
     plt.draw() # don't delete this
     xy_anim.save(path+'figs_raw/'+fname[:len(fname)-4]+'/'+clock_type+'_clock_3danim_'+fname[:len(fname)-4]+'.mp4',
                       writer=FFwriter,extra_args=['-vcodec','libx264'])
-    

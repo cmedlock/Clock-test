@@ -1,3 +1,4 @@
+# plot velocity and acceleration in x- and y-directions separately
 import math
 import matplotlib
 import matplotlib.pyplot as plt
