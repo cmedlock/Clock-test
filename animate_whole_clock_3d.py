@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# make a video of the entire clock being drawin in 3 dimensions
+# make a video of the entire clock being drawn in 3 dimensions
 import math
 import matplotlib
 import matplotlib.pyplot as plt
@@ -29,7 +29,7 @@ if not os.path.exists(path+'figs_raw'):
     os.makedirs(path+'figs_raw')
 
 # make figs
-for fname in dirs:
+for fname in dirs[:2]:
     if 'Scored' not in fname:
         continue
     print 'reading file ',fname,'...'
@@ -45,7 +45,7 @@ for fname in dirs:
     x_temp,y_temp,t_temp = [],[],[]
 
     # read in data
-    record,found_clock = False,False
+    record,found_clock,current_symbol = False,False,''
     for w in range(len(data)):
         line = data[w]
         # found pen stroke?
@@ -60,12 +60,23 @@ for fname in dirs:
         elif record==True:
             if 'RawData' in line and len(x)>0:
                 break
+            if 'symbol label' in line and len(x_temp)==0 and 'NOISE' in line:
+                current_symbol = 'NOISE'
             if 'symbol label' in line and len(x_temp)>0: # length requirement since sometimes there are empty strokes
+                print 'storing previous stroke from ',t_temp[0],' to ',t_temp[-1],' (',(t_temp[0]-1307115563146.0)/10.,' to ',(t_temp[-1]-1307115563146.0)/10.,')'
+                print 'len(t_temp) is now ',len(t_temp)
+                print 'next stroke is ',line
                 # store previous stroke and reset lists for the next one
-                x.append(x_temp)
-                y.append(y_temp)
-                t.append(t_temp)
+                if current_symbol!='NOISE':
+                    x.append(x_temp)
+                    y.append(y_temp)
+                    t.append(t_temp)
+                elif current_symbol=='NOISE':
+                    current_symbol = ''
+                print 'len(t) is now ',len(t)
                 x_temp,y_temp,t_temp = [],[],[]
+                if 'NOISE' in line:
+                    current_symbol = 'NOISE'
                 continue
             elif 'point' not in line:
                 continue
@@ -84,6 +95,24 @@ for fname in dirs:
     
     f.close()
 
+    # force all coordinates to be non-negative
+    xmin = min([min(elt) for elt in x])
+    ymin = min([min(elt) for elt in y])
+    tmin = min([min(elt) for elt in t])
+    x = [np.array(elt)-xmin for elt in x]
+    y = [np.array(elt)-ymin for elt in y]
+    t = [(np.array(elt)-tmin)/10. for elt in t] # the time array should have reasonable values
+    # order the strokes chronologically
+    stroke_start_times = [elt[0] for elt in t]
+    stroke_start_times.sort()
+    stroke_order = []
+    for time in stroke_start_times:
+        for w in range(len(t)):
+            if t[w][0]==time:
+                stroke_order.append(w)
+    for stroke_num in stroke_order:
+        print 'stroke ',stroke_num,': ',t[stroke_num][0],' to ',t[stroke_num][-1]
+    """
     # make each of x, y, and t into a single list for animation purposes
     x_long,y_long,t_long = x[0],y[0],t[0]
     for w in range(1,len(x)):
@@ -92,8 +121,6 @@ for fname in dirs:
         t_long = t_long+t[w]
     # rename
     x,y,t = x_long,y_long,t_long
-    # the time array should have reasonable values
-    t = (t-t[0])/10.
     
     # plot
     plt.close('all')
@@ -119,6 +146,9 @@ for fname in dirs:
 
     xy_anim = anim.FuncAnimation(fig_xy, update_lines, len(x), fargs=(data, lines), interval=50, blit=False)
     
+    #xy.view_init(30,0)
+
     plt.draw() # don't delete this
     xy_anim.save(path+'figs_raw/'+fname[:len(fname)-4]+'/'+clock_type+'_clock_3danim_'+fname[:len(fname)-4]+'.mp4',
                       writer=FFwriter,extra_args=['-vcodec','libx264'])
+"""
