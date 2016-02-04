@@ -113,4 +113,4 @@ for fname in dirs:
     xy.view_init(30,0)
     #plt.show()
     
-    fig_xy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/whole_'+clock_type+'_clock_'+fname[:len(fname)-4]+'.png')
+    fig_xy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/whole_'+clock_type+'_clock_3d_'+fname[:len(fname)-4]+'.png')

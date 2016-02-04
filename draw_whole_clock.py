@@ -18,7 +18,7 @@ if not os.path.exists(path+'figs_raw'):
     os.makedirs(path+'figs_raw')
 
 # make figs
-for fname in dirs[:2]:
+for fname in dirs:
     if 'Scored' not in fname:
         continue
     print 'reading file ',fname,'...'
@@ -29,7 +29,7 @@ for fname in dirs[:2]:
         os.makedirs(path+'figs_raw/'+fname[:len(fname)-4])
 
     # copy or command clock?
-    clock_type = 'COPY'
+    clock_type = 'COMMAND'
     x,y,t = [],[],[]
     x_temp,y_temp,t_temp = [],[],[]
 
@@ -62,7 +62,7 @@ for fname in dirs[:2]:
                     t.append(t_temp)
                 elif is_noise==True:
                     is_noise = False
-                print 'len(t) is now ',len(t)
+                #print 'len(t) is now ',len(t)
                 x_temp,y_temp,t_temp = [],[],[]
                 if 'NOISE' in line:
                     is_noise = True
@@ -92,16 +92,19 @@ for fname in dirs[:2]:
     y = [np.array(elt)-ymin for elt in y]
     t = [(np.array(elt)-tmin)/10. for elt in t] # the time array should have reasonable values
     # order the strokes chronologically
-    stroke_start_times = [elt[0] for elt in t]
-    stroke_start_times.sort()
-    stroke_order = []
-    for time in stroke_start_times:
+    symbol_start_times = [elt[0] for elt in t]
+    symbol_start_times.sort()
+    symbol_order = []
+    for time in symbol_start_times:
         for w in range(len(t)):
             if t[w][0]==time:
-                stroke_order.append(w)
-    for stroke_num in stroke_order:
-        print 'stroke ',stroke_num,': ',t[stroke_num][0],' to ',t[stroke_num][-1]
-
+                symbol_order.append(w)
+    x = [x[symbol_num] for symbol_num in symbol_order]
+    y = [y[symbol_num] for symbol_num in symbol_order]
+    t = [t[symbol_num] for symbol_num in symbol_order]
+    #for symbol_num in symbol_order:
+        #print 'stroke ',stroke_num,': ',t[stroke_num][0],' to ',t[stroke_num][-1]
+    
     xmax = max([max(elt) for elt in x])
     # plot
     plt.close('all')
