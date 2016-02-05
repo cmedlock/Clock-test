@@ -3,7 +3,6 @@
 import math
 import matplotlib
 import matplotlib.pyplot as plt
-import mpl_toolkits.mplot3d.axes3d as p3
 import matplotlib.animation as anim
 import numpy as np
 import os
@@ -63,9 +62,9 @@ for fname in dirs[:2]:
             if 'symbol label' in line and len(x_temp)==0 and 'NOISE' in line:
                 current_symbol = 'NOISE'
             if 'symbol label' in line and len(x_temp)>0: # length requirement since sometimes there are empty strokes
-                print 'storing previous stroke from ',t_temp[0],' to ',t_temp[-1],' (',(t_temp[0]-1307115563146.0)/10.,' to ',(t_temp[-1]-1307115563146.0)/10.,')'
-                print 'len(t_temp) is now ',len(t_temp)
-                print 'next stroke is ',line
+                #print 'storing previous stroke from ',t_temp[0],' to ',t_temp[-1],' (',(t_temp[0]-1307115563146.0)/10.,' to ',(t_temp[-1]-1307115563146.0)/10.,')'
+                #print 'len(t_temp) is now ',len(t_temp)
+                #print 'next stroke is ',line
                 # store previous stroke and reset lists for the next one
                 if current_symbol!='NOISE':
                     x.append(x_temp)
@@ -73,7 +72,7 @@ for fname in dirs[:2]:
                     t.append(t_temp)
                 elif current_symbol=='NOISE':
                     current_symbol = ''
-                print 'len(t) is now ',len(t)
+                #print 'len(t) is now ',len(t)
                 x_temp,y_temp,t_temp = [],[],[]
                 if 'NOISE' in line:
                     current_symbol = 'NOISE'
@@ -99,20 +98,23 @@ for fname in dirs[:2]:
     xmin = min([min(elt) for elt in x])
     ymin = min([min(elt) for elt in y])
     tmin = min([min(elt) for elt in t])
-    x = [np.array(elt)-xmin for elt in x]
-    y = [np.array(elt)-ymin for elt in y]
-    t = [(np.array(elt)-tmin)/10. for elt in t] # the time array should have reasonable values
+    x = [list(np.array(elt)-xmin) for elt in x]
+    y = [list(np.array(elt)-ymin) for elt in y]
+    t = [list((np.array(elt)-tmin)/10.) for elt in t] # the time array should have reasonable values
     # order the strokes chronologically
-    stroke_start_times = [elt[0] for elt in t]
-    stroke_start_times.sort()
-    stroke_order = []
-    for time in stroke_start_times:
+    symbol_start_times = [elt[0] for elt in t]
+    symbol_start_times.sort()
+    symbol_order = []
+    for time in symbol_start_times:
         for w in range(len(t)):
             if t[w][0]==time:
-                stroke_order.append(w)
-    for stroke_num in stroke_order:
-        print 'stroke ',stroke_num,': ',t[stroke_num][0],' to ',t[stroke_num][-1]
-    """
+                symbol_order.append(w)
+    x = [x[symbol_num] for symbol_num in symbol_order]
+    y = [y[symbol_num] for symbol_num in symbol_order]
+    t = [t[symbol_num] for symbol_num in symbol_order]
+    #for stroke_num in symbol_order:
+        #print 'stroke ',stroke_num,': ',t[stroke_num][0],' to ',t[stroke_num][-1]
+    
     # make each of x, y, and t into a single list for animation purposes
     x_long,y_long,t_long = x[0],y[0],t[0]
     for w in range(1,len(x)):
@@ -121,18 +123,22 @@ for fname in dirs[:2]:
         t_long = t_long+t[w]
     # rename
     x,y,t = x_long,y_long,t_long
-    
+    x,y,t = np.array(x),np.array(y),np.array(t)
+
+    # get new maxima and minima
+    xmin,xmax = min(x),max(x)
+    ymin,ymax = min(y),max(y)
+    tmin,tmax = min(t),max(t)
     # plot
     plt.close('all')
     fig_xy = plt.figure()
     fig_xy.text(0.99, 0.96, fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
-    xy = p3.Axes3D(fig_xy)
-    xy.set_xlabel('x',fontsize=20)
-    xy.set_ylabel('y',fontsize=20)
+    #xy = p3.Axes3D(fig_xy)
+    xy = fig_xy.add_subplot(111,projection='3d')
+    xy.set_xlabel('y',fontsize=20)
+    xy.set_ylabel('x',fontsize=20)
     xy.set_zlabel('t',fontsize=20)
-    xy.set_xlim3d(min(x)-10,max(x)+10)
-    xy.set_ylim3d(min(y)-10,max(y)+10)
-    xy.set_zlim3d(min(t)-10,max(t)+10)
+    plt.axis('equal')
 
     if 'YDU' in fname:
         fig_xy.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
@@ -141,14 +147,19 @@ for fname in dirs[:2]:
     else:
         print 'not a valid filename'
 
-    data = [np.array([x,y,t])]
+    #data = [np.array([x,y,t])]
+    data = [np.array([y,xmax+10-x,t])]
     lines = [xy.plot(dat[0, 0:1], dat[1, 0:1], dat[2, 0:1])[0] for dat in data]
 
     xy_anim = anim.FuncAnimation(fig_xy, update_lines, len(x), fargs=(data, lines), interval=50, blit=False)
     
-    #xy.view_init(30,0)
+    # axis limits need to be set after the animation is drawn (not true for just a 3d figure)
+    xy.set_xlim(0,75)
+    xy.set_ylim(0,75)
+    xy.set_zlim(0,5000)
+
+    xy.view_init(30,0)
 
     plt.draw() # don't delete this
     xy_anim.save(path+'figs_raw/'+fname[:len(fname)-4]+'/'+clock_type+'_clock_3danim_'+fname[:len(fname)-4]+'.mp4',
                       writer=FFwriter,extra_args=['-vcodec','libx264'])
-"""
