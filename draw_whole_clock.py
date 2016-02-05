@@ -18,8 +18,8 @@ if not os.path.exists(path+'figs_raw'):
     os.makedirs(path+'figs_raw')
 
 # make figs
-for fname in dirs:
-    if 'Scored' not in fname:
+for fname in dirs[:2]:
+    if 'Scored' not in fname and 'aiko' not in fname:
         continue
     print 'reading file ',fname,'...'
     f = open(path+fname)
@@ -29,7 +29,7 @@ for fname in dirs:
         os.makedirs(path+'figs_raw/'+fname[:len(fname)-4])
 
     # copy or command clock?
-    clock_type = 'COMMAND'
+    clock_type = 'COPY'
     x,y,t = [],[],[]
     x_temp,y_temp,t_temp = [],[],[]
 
@@ -51,12 +51,13 @@ for fname in dirs:
                 break
             if 'symbol label' in line and len(x_temp)==0 and 'NOISE' in line:
                 is_noise = True
-            if 'symbol label' in line and len(x_temp)>0: # length requirement since sometimes there are empty strokes
-                #print 'storing previous stroke from ',t_temp[0],' to ',t_temp[-1],' (',(t_temp[0]-1307115563146.0)/10.,' to ',(t_temp[-1]-1307115563146.0)/10.,')'
+            if 'symbol label' in line and len(x_temp)>0: # length requirement since sometimes there are empty symbols
+                #print 'is_noise is now ',is_noise
                 #print 'len(t_temp) is now ',len(t_temp)
-                #print 'next stroke is ',line
-                # store previous stroke and reset lists for the next one
+                #print 'next symbol is ',line
+                # store previous symbol and reset lists for the next one
                 if is_noise==False:
+                    #print 'storing previous symbol from ',t_temp[0],' to ',t_temp[-1],' (',(t_temp[0]-1307115563146.0)/10.,' to ',(t_temp[-1]-1307115563146.0)/10.,')'
                     x.append(x_temp)
                     y.append(y_temp)
                     t.append(t_temp)
@@ -105,7 +106,9 @@ for fname in dirs:
     #for symbol_num in symbol_order:
         #print 'stroke ',stroke_num,': ',t[stroke_num][0],' to ',t[stroke_num][-1]
     
-    xmax = max([max(elt) for elt in x])
+    # get new maxima and minima
+    xmin,xmax = min([min(elt) for elt in x]),max([max(elt) for elt in x])
+    ymin,ymax = min([min(elt) for elt in y]),max([max(elt) for elt in y])
     # plot
     plt.close('all')
     fig_xy = plt.figure()

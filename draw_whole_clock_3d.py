@@ -17,7 +17,7 @@ if not os.path.exists(path+'figs_raw'):
     os.makedirs(path+'figs_raw')
 
 # make figs
-for fname in dirs:
+for fname in dirs[:2]:
     if 'Scored' not in fname:
         continue
     print 'reading file ',fname,'...'
@@ -28,12 +28,12 @@ for fname in dirs:
         os.makedirs(path+'figs_raw/'+fname[:len(fname)-4])
 
     # copy or command clock?
-    clock_type = 'COMMAND'
+    clock_type = 'COPY'
     x,y,t = [],[],[]
     x_temp,y_temp,t_temp = [],[],[]
 
     # read in data
-    record,found_clock = False,False
+    record,found_clock,is_noise = False,False,False
     for w in range(len(data)):
         line = data[w]
         # found pen stroke?
@@ -48,12 +48,24 @@ for fname in dirs:
         elif record==True:
             if 'RawData' in line and len(x)>0:
                 break
-            if 'symbol label' in line and len(x_temp)>0: # length requirement since sometimes there are empty strokes
-                # store previous stroke and reset lists for the next one
-                x.append(x_temp)
-                y.append(y_temp)
-                t.append(t_temp)
+            if 'symbol label' in line and len(x_temp)==0 and 'NOISE' in line:
+                is_noise = True
+            if 'symbol label' in line and len(x_temp)>0: # length requirement since sometimes there are empty symbols
+                #print 'is_noise is now ',is_noise
+                #print 'len(t_temp) is now ',len(t_temp)
+                #print 'next symbol is ',line
+                # store previous symbol and reset lists for the next one
+                if is_noise==False:
+                    #print 'storing previous symbol from ',t_temp[0],' to ',t_temp[-1],' (',(t_temp[0]-1307115563146.0)/10.,' to ',(t_temp[-1]-1307115563146.0)/10.,')'
+                    x.append(x_temp)
+                    y.append(y_temp)
+                    t.append(t_temp)
+                elif is_noise==True:
+                    is_noise = False
+                #print 'len(t) is now ',len(t)
                 x_temp,y_temp,t_temp = [],[],[]
+                if 'NOISE' in line:
+                    is_noise = True
                 continue
             elif 'point' not in line:
                 continue
@@ -72,20 +84,31 @@ for fname in dirs:
     
     f.close()
 
-    x = [np.array(elt) for elt in x]
-    y = [np.array(elt) for elt in y]
-    t = [np.array(elt) for elt in t]
     # force all coordinates to be non-negative
     xmin = min([min(elt) for elt in x])
     ymin = min([min(elt) for elt in y])
-    tmin = t[0][0]
-    x = [elt-xmin for elt in x]
-    y = [elt-ymin for elt in y]
-    # the time array should have reasonable values
-    t = [(elt-tmin)/10. for elt in t]
+    tmin = min([min(elt) for elt in t])
+    x = [np.array(elt)-xmin for elt in x]
+    y = [np.array(elt)-ymin for elt in y]
+    t = [(np.array(elt)-tmin)/10. for elt in t] # the time array should have reasonable values
+    # order the strokes chronologically
+    symbol_start_times = [elt[0] for elt in t]
+    symbol_start_times.sort()
+    symbol_order = []
+    for time in symbol_start_times:
+        for w in range(len(t)):
+            if t[w][0]==time:
+                symbol_order.append(w)
+    x = [x[symbol_num] for symbol_num in symbol_order]
+    y = [y[symbol_num] for symbol_num in symbol_order]
+    t = [t[symbol_num] for symbol_num in symbol_order]
+    #for symbol_num in symbol_order:
+        #print 'stroke ',stroke_num,': ',t[stroke_num][0],' to ',t[stroke_num][-1]
     
-    xmax = max([max(elt) for elt in x])
-
+    # get new maxima and minima
+    xmin,xmax = min([min(elt) for elt in x]),max([max(elt) for elt in x])
+    ymin,ymax = min([min(elt) for elt in y]),max([max(elt) for elt in y])
+    tmin,tmax = min([min(elt) for elt in t]),max([max(elt) for elt in t])
     # plot
     plt.close('all')
     fig_xy = plt.figure()
@@ -95,8 +118,10 @@ for fname in dirs:
         xy.plot(y[w],xmax+10-x[w],t[w],color='blue')
     xy.set_xlabel('x',fontsize=20)
     xy.set_ylabel('y',fontsize=20)
-    xy.set_xlim(min(x[0])-10,max(x[0])+10)
-    xy.set_ylim(min(y[0])-10,max(y[0])+10)
+    xy.set_zlabel('t',fontsize=20)
+    xy.set_xlim(xmin-10,xmax+10)
+    xy.set_ylim(ymin-10,ymax+10)
+    xy.set_zlim(tmin-10,tmax+10)
     plt.axis('equal')
     
     if 'YDU' in fname:
