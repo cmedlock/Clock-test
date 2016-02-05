@@ -98,9 +98,13 @@ for fname in dirs[:2]:
     xmin = min([min(elt) for elt in x])
     ymin = min([min(elt) for elt in y])
     tmin = min([min(elt) for elt in t])
-    x = [list(np.array(elt)-xmin) for elt in x]
-    y = [list(np.array(elt)-ymin) for elt in y]
-    t = [list((np.array(elt)-tmin)/10.) for elt in t] # the time array should have reasonable values
+    # connect all symbols
+    #x = [list(np.array(elt)-xmin) for elt in x]
+    #y = [list(np.array(elt)-ymin) for elt in y]
+    #t = [list((np.array(elt)-tmin)/10.) for elt in t] # the time array should have reasonable values
+    x = [np.array(elt)-xmin for elt in x]
+    y = [np.array(elt)-ymin for elt in y]
+    t = [(np.array(elt)-tmin)/10. for elt in t] # the time array should have reasonable values
     # order the strokes chronologically
     symbol_start_times = [elt[0] for elt in t]
     symbol_start_times.sort()
@@ -114,7 +118,7 @@ for fname in dirs[:2]:
     t = [t[symbol_num] for symbol_num in symbol_order]
     #for stroke_num in symbol_order:
         #print 'stroke ',stroke_num,': ',t[stroke_num][0],' to ',t[stroke_num][-1]
-    
+    """ # connect all symbols
     # make each of x, y, and t into a single list for animation purposes
     x_long,y_long,t_long = x[0],y[0],t[0]
     for w in range(1,len(x)):
@@ -124,11 +128,16 @@ for fname in dirs[:2]:
     # rename
     x,y,t = x_long,y_long,t_long
     x,y,t = np.array(x),np.array(y),np.array(t)
-
+    
     # get new maxima and minima
     xmin,xmax = min(x),max(x)
     ymin,ymax = min(y),max(y)
     tmin,tmax = min(t),max(t)
+    """
+    # get new maxima and minima
+    xmin,xmax = min([min(elt) for elt in x]),max([max(elt) for elt in x])
+    ymin,ymax = min([min(elt) for elt in y]),max([max(elt) for elt in y])
+    tmin,tmax = min([min(elt) for elt in t]),max([max(elt) for elt in t])
     # plot
     plt.close('all')
     fig_xy = plt.figure()
@@ -147,12 +156,16 @@ for fname in dirs[:2]:
     else:
         print 'not a valid filename'
 
-    #data = [np.array([x,y,t])]
-    data = [np.array([y,xmax+10-x,t])]
+    data = []
+    for w in range(len(x)):
+        data.append(np.array([y[w],xmax+10-x[w],t[w]]))
+    max_symbol_len = max([len(elt) for elt in x])
+    #data = [np.array([y,xmax+10-x,t])] # connect all symbols
     lines = [xy.plot(dat[0, 0:1], dat[1, 0:1], dat[2, 0:1])[0] for dat in data]
 
-    xy_anim = anim.FuncAnimation(fig_xy, update_lines, len(x), fargs=(data, lines), interval=50, blit=False)
-    
+    xy_anim = anim.FuncAnimation(fig_xy, update_lines, max_symbol_len, fargs=(data, lines), interval=50, blit=False)
+    #xy_anim = anim.FuncAnimation(fig_xy, update_lines, len(x), fargs=(data, lines), interval=50, blit=False) # connect all points
+
     # axis limits need to be set after the animation is drawn (not true for just a 3d figure)
     xy.set_xlim(0,75)
     xy.set_ylim(0,75)
