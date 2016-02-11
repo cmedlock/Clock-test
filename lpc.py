@@ -28,11 +28,21 @@ pi = math.pi
 if not os.path.exists(path+'figs_raw'):
     os.makedirs(path+'figs_raw')
 
-# save interesting quantities
-corr_x,corr_y = [],[]
-Ediff_x,Ediff_y = [],[]
+# copy or command clock?
+clock_type = 'COPY'
 
-for fname in dirs[:2]:
+# save interesting quantities
+# model order
+p = 12
+ak_x_coeffs,ak_y_coeffs = [],[]
+ck_x_coeffs,ck_y_coeffs = [],[]
+for w in range(p):
+    ak_x_coeffs.append([])
+    ak_y_coeffs.append([])
+    ck_x_coeffs.append([])
+    ck_y_coeffs.append([])
+    
+for fname in dirs:
     if 'Scored' not in fname:
         continue
     print 'reading file ',fname,'...'
@@ -50,9 +60,9 @@ for fname in dirs[:2]:
 
     if not os.path.exists(path+'figs_raw/'+fname[:len(fname)-4]):
         os.makedirs(path+'figs_raw/'+fname[:len(fname)-4])
+    if not os.path.exists(path+'figs_raw/'+fname[:len(fname)-4]+'/LPC'):
+        os.makedirs(path+'figs_raw/'+fname[:len(fname)-4]+'/LPC')
 
-    # copy or command clock?
-    clock_type = 'COPY'
     x,y,t = [],[],[]
 
     # read in data
@@ -179,8 +189,7 @@ for fname in dirs[:2]:
                     yval += yframe[d]*yframe[len(yframe)-1-r+d]
             rxx.append(xval)
             ryy.append(yval)
-        # model order
-        p = 12
+        # calculate linear prediction coefficients
         center_idx = len(xframe)-1
         D_x,D_y = np.array(rxx[center_idx+1:center_idx+1+p]),np.array(ryy[center_idx+1:center_idx+1+p])
         W_x,W_y = np.empty((p,p)),np.empty((p,p))
@@ -198,32 +207,57 @@ for fname in dirs[:2]:
         for k in range(2,p+1):
             x1,y1 = ak_x[k-1],ak_y[k-1]
             for m in range(1,k):
-                x1 += m/k*ak_x[m-1]*ck_x[k-m-1]
-                y1 += m/k*ak_y[m-1]*ck_y[k-m-1]
+                x1 += float(m)/float(k)*ak_x[m-1]*ck_x[k-m-1]
+                y1 += float(m)/float(k)*ak_y[m-1]*ck_y[k-m-1]
             ck_x.append(x1)
             ck_y.append(y1)
+        # store the coefficients for comparison between the drawings of healthy
+        # and impaired patients
+        for m in range(p):
+            ak_x_coeffs[m].append((ftype,ak_x[m]))
+            ak_y_coeffs[m].append((ftype,ak_y[m]))
+            ck_x_coeffs[m].append((ftype,ck_x[m]))
+            ck_y_coeffs[m].append((ftype,ck_y[m]))
+        
         # plot
         plt.close('all')
-        fig = plt.figure()
-        ax_x,ax_y = fig.add_subplot(211),fig.add_subplot(212)
-        ax_x.stem(ck_x)
-        ax_y.stem(ck_y)
-        ax_x.set_xlim(left=-1)
-        ax_y.set_xlim(left=-1)
-        ax_x.set_ylim(top=max(ck_x)*1.2)
-        ax_y.set_ylim(top=max(ck_y)*1.2)
-        ax_x.set_ylabel('$c_{kx}$')
-        ax_y.set_ylabel('$c_{ky}$')
-        fig1 = plt.figure()
-        ax_x1,ax_y1 = fig1.add_subplot(211),fig1.add_subplot(212)
-        ax_x1.stem(ak_x)
-        ax_y1.stem(ak_y)
-        ax_x1.set_xlim(left=-1)
-        ax_y1.set_xlim(left=-1)
-        ax_x1.set_ylim(top=max(ak_x)*1.2)
-        ax_y1.set_ylim(top=max(ak_y)*1.2)
-        ax_x1.set_ylabel('$a_{kx}$')
-        ax_y1.set_ylabel('$a_{ky}$')
+        fig_x = plt.figure()
+        ax_xspec,ax_xcep = fig_x.add_subplot(211),fig_x.add_subplot(212)
+        ax_xspec.stem(ak_x)
+        ax_xcep.stem(ck_x)
+        ax_xspec.set_xlim(left=-1)
+        ax_xcep.set_xlim(left=-1)
+        ax_xspec.set_ylim(top=max(ak_x)*1.2)
+        ax_xcep.set_ylim(top=max(ck_x)*1.2)
+        ax_xspec.set_ylabel('$a_{kx}$',fontsize=20)
+        ax_xcep.set_ylabel('$c_{kx}$',fontsize=20)
+        fig_y = plt.figure()
+        ax_yspec,ax_ycep = fig_y.add_subplot(211),fig_y.add_subplot(212)
+        ax_yspec.stem(ak_y)
+        ax_ycep.stem(ck_y)
+        ax_yspec.set_xlim(left=-1)
+        ax_ycep.set_xlim(left=-1)
+        ax_yspec.set_ylim(top=max(ak_y)*1.2)
+        ax_ycep.set_ylim(top=max(ck_y)*1.2)
+        ax_yspec.set_ylabel('$a_{ky}$',fontsize=20)
+        ax_ycep.set_ylabel('$c_{ky}$',fontsize=20)
 
-        fig.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/lpc_cepstrum_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
-        fig1.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/lpc_spectrum_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+        fig_x.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/LPC/lpc_x_frame'+str(w)+'_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+        fig_y.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/LPC/lpc_y_frame'+str(w)+'_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+
+# compare LPC spectrum and cepstrum for the drawings of healthy vs. impaired patients
+for w in range(p):
+    # LPC spectrum
+    ct.make_hist([elt[1] for elt in ak_x_coeffs[w] if elt[0]=='healthy'],
+                [elt[1] for elt in ak_x_coeffs[w] if elt[0]=='impaired'],
+                10,'LPC: a_'+str(w)+' (x)','a'+str(w)+'_x_'+clock_type,path)
+    ct.make_hist([elt[1] for elt in ak_y_coeffs[w] if elt[0]=='healthy'],
+                [elt[1] for elt in ak_y_coeffs[w] if elt[0]=='impaired'],
+                10,'LPC: a_'+str(w)+' (y)','a'+str(w)+'_x_'+clock_type,path)
+    # LPC cepstrum
+    ct.make_hist([elt[1] for elt in ck_x_coeffs[w] if elt[0]=='healthy'],
+                [elt[1] for elt in ck_x_coeffs[w] if elt[0]=='impaired'],
+                10,'LPC Cepstrum: c_'+str(w)+' (x)','c'+str(w)+'_x_'+clock_type,path)
+    ct.make_hist([elt[1] for elt in ak_y_coeffs[w] if elt[0]=='healthy'],
+                [elt[1] for elt in ak_y_coeffs[w] if elt[0]=='impaired'],
+                10,'LPC Cepstrum: c_'+str(w)+' (y)','c'+str(w)+'_x_'+clock_type,path)
