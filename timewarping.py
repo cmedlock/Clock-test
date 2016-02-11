@@ -3,6 +3,7 @@
 # 2.estimate ideal underlying sinusoids
 # 3.compute correlation and mean squared difference
 # between ideal sinusoids and actual drawing
+# 4.draw clockface in polar coordinates
 import math
 import matplotlib
 import matplotlib.pyplot as plt
@@ -34,7 +35,7 @@ if not os.path.exists(path+'figs_raw'):
 corr_x,corr_y = [],[]
 Ediff_x,Ediff_y = [],[]
 
-for fname in dirs[:4]:
+for fname in dirs:
     if 'Scored' not in fname:
         continue
     print 'reading file ',fname,'...'
@@ -54,7 +55,7 @@ for fname in dirs[:4]:
         os.makedirs(path+'figs_raw/'+fname[:len(fname)-4])
 
     # copy or command clock?
-    clock_type = 'COMMAND'
+    clock_type = 'COPY'
     x,y,t = [],[],[]
 
     # read in data
@@ -95,8 +96,6 @@ for fname in dirs[:4]:
     
     f.close()
 
-    x,y,t = np.array(x)-x[0],np.array(y)-y[0],np.array(t)-t[0]
-    
     # compensate for non-constant velocity
     N_orig = len(x)
 
@@ -336,6 +335,9 @@ for fname in dirs[:4]:
     plt.axis('equal')
 
     # set axis limits
+    rtheta.set_xlim(left=-pi-0.05,right=pi+0.05)
+    rtheta.set_ylim(bottom=min(r*10**4)*0.8,top=max(r*10**4)*1.2)
+    
     xt.set_xlim(right=len(x))
     xt_eqdist.set_xlim(right=len(x_eqdist))
     dftxk.set_ylim(bottom=min(np.abs(dftx_posfreq[1:]))/10,top=max(np.abs(dftx))*10)
