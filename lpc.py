@@ -167,7 +167,6 @@ for fname in dirs[:2]:
     yframes = [np.array(elt)*window for elt in yframes]
     
     # step 4: calculate the LPC cepstrum of each frame
-    
     for w in range(F):
         xframe,yframe = xframes[w],yframes[w]
         # calculate deterministic autocorrelation
@@ -183,7 +182,7 @@ for fname in dirs[:2]:
         # model order
         p = 12
         center_idx = len(xframe)-1
-        D_x,D_y = np.array(rxx[center_idx:center_idx+p]),np.array(ryy[center_idx:center_idx+p])
+        D_x,D_y = np.array(rxx[center_idx+1:center_idx+1+p]),np.array(ryy[center_idx+1:center_idx+1+p])
         W_x,W_y = np.empty((p,p)),np.empty((p,p))
         for row in range(p):
             for column in range(row,p):
@@ -199,7 +198,32 @@ for fname in dirs[:2]:
         for k in range(2,p+1):
             x1,y1 = ak_x[k-1],ak_y[k-1]
             for m in range(1,k):
-                x1 += m/k*ak_x[m-1]*ck_x[k-m]
-                y1 += m/k*ak_y[m-1]*ck_y[k-m]
+                x1 += m/k*ak_x[m-1]*ck_x[k-m-1]
+                y1 += m/k*ak_y[m-1]*ck_y[k-m-1]
             ck_x.append(x1)
             ck_y.append(y1)
+        # plot
+        plt.close('all')
+        fig = plt.figure()
+        ax_x,ax_y = fig.add_subplot(211),fig.add_subplot(212)
+        ax_x.stem(ck_x)
+        ax_y.stem(ck_y)
+        ax_x.set_xlim(left=-1)
+        ax_y.set_xlim(left=-1)
+        ax_x.set_ylim(top=max(ck_x)*1.2)
+        ax_y.set_ylim(top=max(ck_y)*1.2)
+        ax_x.set_ylabel('$c_{kx}$')
+        ax_y.set_ylabel('$c_{ky}$')
+        fig1 = plt.figure()
+        ax_x1,ax_y1 = fig1.add_subplot(211),fig1.add_subplot(212)
+        ax_x1.stem(ak_x)
+        ax_y1.stem(ak_y)
+        ax_x1.set_xlim(left=-1)
+        ax_y1.set_xlim(left=-1)
+        ax_x1.set_ylim(top=max(ak_x)*1.2)
+        ax_y1.set_ylim(top=max(ak_y)*1.2)
+        ax_x1.set_ylabel('$a_{kx}$')
+        ax_y1.set_ylabel('$a_{ky}$')
+
+        fig.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/lpc_cepstrum_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+        fig1.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/lpc_spectrum_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
