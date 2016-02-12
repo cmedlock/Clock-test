@@ -109,13 +109,15 @@ for fname in dirs[:2]:
     # get new maxima and minima
     xmin,xmax = min([min(elt) for elt in x]),max([max(elt) for elt in x])
     ymin,ymax = min([min(elt) for elt in y]),max([max(elt) for elt in y])
+    x = [xmax+10-elt for elt in x] # ensures that the clock is plotted upright when in 2 dimensions
     # plot
     plt.close('all')
     fig_xy = plt.figure()
     fig_xy.text(0.99, 0.96, fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
     xy = fig_xy.add_subplot(111)
     for w in range(len(x)):
-        xy.plot(y[w],xmax+10-x[w],color='blue')
+        #xy.plot(y[w],xmax+10-x[w],color='blue')
+        xy.plot(y[w],x[w],color='blue')
     xy.set_xlabel('x',fontsize=20)
     xy.set_ylabel('y',fontsize=20)
     xy.set_xlim(min(x[0])-10,max(x[0])+10)
@@ -123,9 +125,9 @@ for fname in dirs[:2]:
     plt.axis('equal')
     
     if 'YDU' in fname:
-        fig_xy.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_xy.text(0.32, 0.955, 'HEALTHY ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
     elif 'CIN' in fname:
-        fig_xy.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_xy.text(0.22, 0.955, 'IMPAIRED ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
     else:
         print 'not a valid filename'
     

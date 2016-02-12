@@ -88,9 +88,9 @@ for fname in dirs[:2]:
     xmin = min([min(elt) for elt in x])
     ymin = min([min(elt) for elt in y])
     tmin = min([min(elt) for elt in t])
-    x = [np.array(elt)-xmin for elt in x]
-    y = [np.array(elt)-ymin for elt in y]
-    t = [(np.array(elt)-tmin)/10. for elt in t] # the time array should have reasonable values
+    x = [list(np.array(elt)-xmin) for elt in x]
+    y = [list(np.array(elt)-ymin) for elt in y]
+    t = [list((np.array(elt)-tmin)/10.) for elt in t] # the time array should have reasonable values
     # order the strokes chronologically
     symbol_start_times = [elt[0] for elt in t]
     symbol_start_times.sort()
@@ -109,15 +109,25 @@ for fname in dirs[:2]:
     xmin,xmax = min([min(elt) for elt in x]),max([max(elt) for elt in x])
     ymin,ymax = min([min(elt) for elt in y]),max([max(elt) for elt in y])
     tmin,tmax = min([min(elt) for elt in t]),max([max(elt) for elt in t])
+
+    # make each of x, y, and t into a single list for animation purposes
+    # insert NaN's between the symbols so that they are not connected together
+    x_long,y_long,t_long = x[0]+[np.nan],y[0]+[np.nan],t[0]+[np.nan]
+    for w in range(1,len(x)):
+        x_long = x_long+x[w]+[np.nan]
+        y_long = y_long+y[w]+[np.nan]
+        t_long = t_long+t[w]+[np.nan]
+    # rename
+    x,y,t = np.array(x_long),np.array(y_long),np.array(t_long)
+
     # plot
     plt.close('all')
     fig_xy = plt.figure()
     fig_xy.text(0.99, 0.96, fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
     xy = fig_xy.add_subplot(111,projection='3d')
-    for w in range(len(x)):
-        xy.plot(y[w],xmax+10-x[w],t[w],color='blue')
-    xy.set_xlabel('x',fontsize=20)
-    xy.set_ylabel('y',fontsize=20)
+    xy.plot(y,xmax+10-x,t,color='blue')
+    xy.set_xlabel('y',fontsize=20)
+    xy.set_ylabel('x',fontsize=20)
     xy.set_zlabel('t',fontsize=20)
     xy.set_xlim(xmin-10,xmax+10)
     xy.set_ylim(ymin-10,ymax+10)
@@ -125,9 +135,9 @@ for fname in dirs[:2]:
     plt.axis('equal')
     
     if 'YDU' in fname:
-        fig_xy.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_xy.text(0.32, 0.955, 'HEALTHY ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
     elif 'CIN' in fname:
-        fig_xy.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_xy.text(0.32, 0.955, 'IMPAIRED ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
     else:
         print 'not a valid filename'
     

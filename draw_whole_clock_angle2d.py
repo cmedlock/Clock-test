@@ -93,19 +93,6 @@ for fname in dirs[:2]:
     x = [list(np.array(elt)-xmin) for elt in x]
     y = [list(np.array(elt)-ymin) for elt in y]
     t = [list((np.array(elt)-tmin)/10.) for elt in t] # the time array should have reasonable values
-    # order the strokes chronologically
-    symbol_start_times = [elt[0] for elt in t]
-    symbol_start_times.sort()
-    symbol_order = []
-    for time in symbol_start_times:
-        for w in range(len(t)):
-            if t[w][0]==time:
-                symbol_order.append(w)
-    x = [x[symbol_num] for symbol_num in symbol_order]
-    y = [y[symbol_num] for symbol_num in symbol_order]
-    t = [t[symbol_num] for symbol_num in symbol_order]
-    #for symbol_num in symbol_order:
-        #print 'stroke ',stroke_num,': ',t[stroke_num][0],' to ',t[stroke_num][-1]
     
     # make each of x, y, and t into a single list for animation purposes
     x_long,y_long,t_long = x[0],y[0],t[0]
@@ -128,7 +115,7 @@ for fname in dirs[:2]:
     x = [x[idx] for idx in point_order]
     y = [y[idx] for idx in point_order]
     t = [t[idx] for idx in point_order]
-    
+        
     # plot
     plt.close('all')
     fig_xy = plt.figure()

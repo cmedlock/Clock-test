@@ -126,8 +126,7 @@ for fname in dirs[:2]:
         t_long = t_long+t[w]+[np.nan]
     
     # rename
-    x,y,t = x_long,y_long,t_long
-    x,y,t = np.array(x),np.array(y),np.array(t)
+    x,y,t = np.array(x_long),np.array(y_long),np.array(t_long)
     
     # get new maxima and minima
     xmin,xmax = min(x),max(x)
@@ -149,9 +148,9 @@ for fname in dirs[:2]:
     xy_anim = anim.FuncAnimation(fig_xy, update_lines, len(x), fargs=(data, lines), interval=50, blit=False) # connect all symbols
 
     if 'YDU' in fname:
-        fig_xy.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_xy.text(0.32, 0.955, 'HEALTHY ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
     elif 'CIN' in fname:
-        fig_xy.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_xy.text(0.32, 0.955, 'IMPAIRED ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
     else:
         print 'not a valid filename'
 
