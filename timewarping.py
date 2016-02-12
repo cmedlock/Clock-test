@@ -107,7 +107,8 @@ for fname in dirs:
 
     # compensate for non-constant velocity
     N_orig = len(x)
-
+    N_new = 250
+    
     # calculate average distance between points
     dists = []
     for w in range(1,len(x)):
@@ -115,6 +116,7 @@ for fname in dirs:
         dist = math.sqrt(dx**2+dy**2)
         dists.append(dist)
     dist_avg = mean(dists)
+    dist_total = sum(dists)
     #print 'average distance between points is ',dist_avg_copy
     #print 'total distance is ',sum(dists_copy)
 
@@ -128,7 +130,7 @@ for fname in dirs:
         y_interp.append(y[w])
         dx,dy = x[w+1]-x[w],y[w+1]-y[w]
         dist = math.sqrt(dx**2+dy**2)
-        n_segments = ceil(dist/dist_avg)*100
+        n_segments = ceil(dist/dist_avg)*200
         for r in range(1,int(n_segments)):
             x_new = x[w]+r*dx/n_segments
             y_new = y[w]+r*dy/n_segments
@@ -136,35 +138,30 @@ for fname in dirs:
             y_interp.append(y_new)
     x_interp.append(x[-1])
     y_interp.append(y[-1])
-    #print '\naverage distance between interpolated points is ',dist_avg_interp
-    #print 'total distance is now ',sum(dists_interp)
 
     # start from the first point and find the ones that are 
     # approximately a distance dist_avg from each other
     x_eqdist,y_eqdist = [x_interp[0]],[y_interp[0]]
     idx = 0
-    for k in range(len(x)-1):
-        dist_total = 0
+    #for k in range(len(x)-1):
+    for k in range(N_new):
+        dist_sofar = 0
         for j in range(idx,len(x_interp)-1):
             dx,dy = x_interp[j+1]-x_interp[j],y_interp[j+1]-y_interp[j]
-            dist_total += math.sqrt(dx**2+dy**2)
-            #if abs(dist_total-dist_avg)<0.01:
-            if abs(dist_total-dist_avg)<dist_avg/100.:
+            dist_sofar += math.sqrt(dx**2+dy**2)
+            #if abs(dist_sofar-dist_avg)<dist_avg/100.:
+            if abs(dist_sofar-dist_total/250.)<dist_total/(250.*100.):
                 idx = j+1
 	        break
         x_eqdist.append(x_interp[idx])
         y_eqdist.append(y_interp[idx])
-    x_eqdist,y_eqdist = np.array(x_eqdist)-x_eqdist[0],np.array(y_eqdist)-y_eqdist[0]
-    # normalize to unit energy, so can compare correlation and mean squared
-    # difference between drawing and ideal sinusoid for different patients
-    x_eqdist,y_eqdist = x_eqdist/sum(x_eqdist**2),y_eqdist/sum(y_eqdist**2)
 
     # now want to estimate the frequency of the underlying sinusoid
     # subtract mean values (zm = zero mean)
     x_eqdist_zm,y_eqdist_zm = x_eqdist-mean(x_eqdist),y_eqdist-mean(y_eqdist)
     
     # DFS coefficients
-    dft_size = N_orig
+    dft_size = len(x_eqdist_zm)
     k = np.arange(dft_size)
     omega = 2.*k/float(dft_size)
     dftx,dfty = np.fft.fft(x_eqdist_zm,n=dft_size),np.fft.fft(y_eqdist_zm,n=dft_size)
@@ -198,7 +195,6 @@ for fname in dirs:
     # calculate ideal underlying sinusoid
     n = np.arange(len(x_eqdist))
     x_true,y_true = np.cos(w_true_x*n),np.sin(w_true_y*n)
-
     # use maximum correlation to determine phase and range of x or y to determine amplitude
     phase_x,max_corr_x = 0,0
     phase_y,max_corr_y = 0,0
@@ -220,8 +216,8 @@ for fname in dirs:
     amp_y = (max(y_eqdist)-min(y_eqdist))/2
     x_true = amp_x*x_true
     y_true = amp_y*y_true
-    x_true,y_true = x_true+min(x_eqdist)-min(x_true),y_true+min(y_eqdist)-min(y_true)
-    
+    x_true,y_true = x_true+mean(x_eqdist),y_true+mean(y_eqdist)
+
     # compute and save correlation between the two
     corr_x.append(np.dot(x_eqdist,x_true))
     corr_y.append(np.dot(y_eqdist,y_true))
@@ -307,7 +303,7 @@ for fname in dirs:
     fig_xt.subplots_adjust(hspace=0.6,left=0.15)
     fig_yt.subplots_adjust(hspace=0.6,left=0.15)
     # declare subplots
-    xt,yt,xy,rtheta = fig_xt.add_subplot(411),fig_yt.add_subplot(411),fig_xy.add_subplot(111),fig_rtheta.add_subplot(111)
+    xt,yt,xy,rtheta = fig_xt.add_subplot(411),fig_yt.add_subplot(411),fig_xy.add_subplot(111,aspect=1.0),fig_rtheta.add_subplot(111)
     xt_eqdist,yt_eqdist = fig_xt.add_subplot(412),fig_yt.add_subplot(412)
     dftxk,dftyk = fig_xt.add_subplot(413),fig_yt.add_subplot(413)
     dftxk_zoom,dftyk_zoom = fig_xt.add_subplot(414),fig_yt.add_subplot(414)
@@ -316,7 +312,7 @@ for fname in dirs:
     xy.plot(x_true,y_true,'k-.',lw=3,label='$x_{true}[n],y_{true}[n]$')
     xy.legend(loc='best',frameon=False,fontsize=20)
     # draw circles in polar coordinates
-    rtheta.plot(theta,r*10**4,label=r'$\theta[n],r[n]$')
+    rtheta.plot(theta,r,label=r'$\theta[n],r[n]$')
     rtheta.legend(loc='best',frameon=False,fontsize=20)
     # draw x[n]
     xt.plot(x,lw=2)
@@ -333,21 +329,13 @@ for fname in dirs:
     dftyk.plot(omega_posfreq,np.abs(dfty_posfreq),linecolor_dft,lw=2)
     dftyk_zoom.plot(omega_posfreq_zoom,np.abs(dfty_posfreq_zoom),linecolor_dft,lw=2)
 
-    # equalize axis scales for circle drawing
-    if max(x)-min(x)>max(y)-min(y):
-        ax_range = max(x)-min(x)+20
-        xy.set_xlim(min(x)-10,max(x)+10)
-        xy.set_ylim(min(y)-10,min(y)+ax_range)
-    else:
-        ax_range = max(y)-min(y)+20
-        xy.set_xlim(min(x)-10,min(x)+ax_range)
-        xy.set_ylim(min(y)-10,max(y)+10)
-    plt.axis('equal')
-
     # set axis limits
-    rtheta.set_xlim(left=-pi-0.05,right=pi+0.05)
-    rtheta.set_ylim(bottom=min(r*10**4)*0.8,top=max(r*10**4)*1.2)
+    xy.set_xlim(left=-10,right=140)
+    xy.set_ylim(bottom=-10,top=140)
     
+    rtheta.set_xlim(left=-3.2,right=3.2)
+    rtheta.set_ylim(bottom=45,top=75)
+
     xt.set_xlim(right=len(x))
     xt_eqdist.set_xlim(right=len(x_eqdist))
     dftxk.set_ylim(bottom=min(np.abs(dftx_posfreq[1:]))/10,top=max(np.abs(dftx))*10)
@@ -369,7 +357,7 @@ for fname in dirs:
     xy.set_ylabel(r'$y$',fontsize=y_axis_fontsize)
 
     rtheta.set_xlabel(r'$\theta$',fontsize=x_axis_fontsize)
-    rtheta.set_ylabel(r'$r \times 10^4 $',fontsize=y_axis_fontsize)
+    rtheta.set_ylabel(r'$r$',fontsize=y_axis_fontsize)
 
     xt.set_xlabel(r'$n$',fontsize=x_axis_fontsize)
     xt.set_ylabel(r'$x[n]$',color=linecolor_xy,fontsize=y_axis_fontsize)
@@ -427,9 +415,9 @@ for fname in dirs:
         print 'not a valid filename'
 
     # save figures
-    fig_xy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/xy_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+    #fig_xy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/xy_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
     fig_rtheta.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/xy_polar_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
-    fig_xt.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/x_true_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
-    fig_yt.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/y_true_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+    #fig_xt.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/x_true_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+    #fig_yt.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/y_true_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
 
     plt.close('all')
