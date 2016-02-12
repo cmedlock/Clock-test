@@ -3,6 +3,7 @@
 import math
 import matplotlib
 import matplotlib.pyplot as plt
+import mpl_toolkits.mplot3d.axes3d as p3
 import matplotlib.animation as anim
 import numpy as np
 import os
@@ -142,6 +143,11 @@ for fname in dirs[:2]:
     xy.set_zlabel('t',fontsize=20)
     plt.axis('equal')
 
+    data = [np.array([y,xmax+10-x,t])] # connect all symbols
+    lines = [xy.plot(dat[0, 0:1], dat[1, 0:1], dat[2, 0:1])[0] for dat in data]
+
+    xy_anim = anim.FuncAnimation(fig_xy, update_lines, len(x), fargs=(data, lines), interval=50, blit=False) # connect all symbols
+
     if 'YDU' in fname:
         fig_xy.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
     elif 'CIN' in fname:
@@ -149,15 +155,10 @@ for fname in dirs[:2]:
     else:
         print 'not a valid filename'
 
-    data = [np.array([y,xmax+10-x,t])] # connect all symbols
-    lines = [xy.plot(dat[0, 0:1], dat[1, 0:1], dat[2, 0:1])[0] for dat in data]
-
-    xy_anim = anim.FuncAnimation(fig_xy, update_lines, len(x), fargs=(data, lines), interval=50, blit=False) # connect all symbols
-
-    # axis limits need to be set after the animation is drawn (not true for just a 3d figure)
-    xy.set_xlim(0,75)
-    xy.set_ylim(0,75)
-    xy.set_zlim(0,5000)
+    # axis limits need to be set after the animation is drawn (not true for a 3d figure)
+    xy.set_xlim(ymin-10,ymax+10)
+    xy.set_ylim(-10,xmax-xmin+30)
+    xy.set_zlim(tmin-10,tmax+10)
 
     xy.view_init(30,0)
 
