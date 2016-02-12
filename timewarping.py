@@ -55,7 +55,7 @@ for fname in dirs:
         os.makedirs(path+'figs_raw/'+fname[:len(fname)-4])
 
     # copy or command clock?
-    clock_type = 'COPY'
+    clock_type = 'COMMAND'
     x,y,t = [],[],[]
 
     # read in data
@@ -95,6 +95,15 @@ for fname in dirs:
         t.append(timestamp)
     
     f.close()
+
+    # change x so that if the whole clock is drawn,
+    # it is oriented correctly
+    x = max(x)+10-x
+    
+    # normalize the size of the word such that all coordinates
+    # are linearly positioned between 0 and 127
+    x = 127*(x-min(x))/(max(x)-min(x))
+    y = 127*(y-min(y))/(max(y)-min(y))
 
     # compensate for non-constant velocity
     N_orig = len(x)
@@ -146,7 +155,8 @@ for fname in dirs:
         x_eqdist.append(x_interp[idx])
         y_eqdist.append(y_interp[idx])
     x_eqdist,y_eqdist = np.array(x_eqdist)-x_eqdist[0],np.array(y_eqdist)-y_eqdist[0]
-    # normalize to unit energy, so can compare between drawings
+    # normalize to unit energy, so can compare correlation and mean squared
+    # difference between drawing and ideal sinusoid for different patients
     x_eqdist,y_eqdist = x_eqdist/sum(x_eqdist**2),y_eqdist/sum(y_eqdist**2)
 
     # now want to estimate the frequency of the underlying sinusoid
@@ -399,17 +409,20 @@ for fname in dirs:
     
     # add drawing type (healthy or impaired) and file name
     fig_xy.text(0.99, 0.96,fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
+    fig_rtheta.text(0.99, 0.96,fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
     fig_xt.text(0.99, 0.96,fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
     fig_yt.text(0.99, 0.96,fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
 
     if 'YDU' in fname:
-        fig_xy.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
-        fig_xt.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
-        fig_yt.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_xy.text(0.25, 0.955, 'HEALTHY ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_rtheta.text(0.25, 0.955, 'HEALTHY ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_xt.text(0.25, 0.955, 'HEALTHY ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_yt.text(0.25, 0.955, 'HEALTHY ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
     elif 'CIN' in fname:
-        fig_xy.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
-        fig_xt.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
-        fig_yt.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_xy.text(0.25, 0.955, 'IMPAIRED ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_rtheta.text(0.25, 0.955, 'IMPAIRED ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_xt.text(0.25, 0.955, 'IMPAIRED ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_yt.text(0.25, 0.955, 'IMPAIRED ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
     else:
         print 'not a valid filename'
 
