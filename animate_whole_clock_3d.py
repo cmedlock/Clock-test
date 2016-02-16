@@ -29,7 +29,7 @@ if not os.path.exists(path+'figs_raw'):
     os.makedirs(path+'figs_raw')
 
 # make figs
-for fname in dirs[:2]:
+for fname in dirs:
     if 'Scored' not in fname:
         continue
     print 'reading file ',fname,'...'
@@ -95,14 +95,23 @@ for fname in dirs[:2]:
     
     f.close()
 
-    # force all coordinates to be non-negative
+    # change x so that if the whole clock is drawn,
+    # it is oriented correctly
+    xmax = max([max(elt) for elt in x])
+    for w in range(len(x)):
+        x[w] = [xmax+10-elt for elt in x[w]]
+    xmax = max([max(elt) for elt in x])
     xmin = min([min(elt) for elt in x])
+    ymax = max([max(elt) for elt in y])
     ymin = min([min(elt) for elt in y])
     tmin = min([min(elt) for elt in t])
-    # connect all symbols
-    x = [list(np.array(elt)-xmin) for elt in x]
-    y = [list(np.array(elt)-ymin) for elt in y]
-    t = [list((np.array(elt)-tmin)/10.) for elt in t] # the time array should have reasonable values
+    # also normalize the size of the word such that all coordinates
+    # are linearly positioned between 0 and 127
+    for w in range(len(x)):
+        x[w] = [127*(elt-xmin)/(xmax-xmin) for elt in x[w]]
+        y[w] = [127*(elt-ymin)/(ymax-ymin) for elt in y[w]]
+        t[w] = [(elt-tmin)/10. for elt in t[w]] # the time array should have reasonable values
+
     # order the strokes chronologically
     symbol_start_times = [elt[0] for elt in t]
     symbol_start_times.sort()
@@ -124,7 +133,6 @@ for fname in dirs[:2]:
         x_long = x_long+x[w]+[np.nan]
         y_long = y_long+y[w]+[np.nan]
         t_long = t_long+t[w]+[np.nan]
-    
     # rename
     x,y,t = np.array(x_long),np.array(y_long),np.array(t_long)
     
@@ -140,9 +148,9 @@ for fname in dirs[:2]:
     xy.set_xlabel('y',fontsize=20)
     xy.set_ylabel('x',fontsize=20)
     xy.set_zlabel('t',fontsize=20)
-    plt.axis('equal')
+    #plt.axis('equal')
 
-    data = [np.array([y,xmax+10-x,t])] # connect all symbols
+    data = [np.array([y,x,t])] # connect all symbols
     lines = [xy.plot(dat[0, 0:1], dat[1, 0:1], dat[2, 0:1])[0] for dat in data]
 
     xy_anim = anim.FuncAnimation(fig_xy, update_lines, len(x), fargs=(data, lines), interval=50, blit=False) # connect all symbols
@@ -155,9 +163,9 @@ for fname in dirs[:2]:
         print 'not a valid filename'
 
     # axis limits need to be set after the animation is drawn (not true for a 3d figure)
-    xy.set_xlim(ymin-10,ymax+10)
-    xy.set_ylim(-10,xmax-xmin+30)
-    xy.set_zlim(tmin-10,tmax+10)
+    xy.set_xlim(left=-10,right=140)
+    xy.set_ylim(bottom=-10,top=140)
+    xy.set_zlim(-10,4500)
 
     xy.view_init(30,0)
 
