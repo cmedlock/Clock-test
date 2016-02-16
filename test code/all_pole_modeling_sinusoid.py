@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 pi = math.pi
-n = np.arange(10)
+n = np.arange(5)
 omega = 2.*pi/5.
 h = np.cos(omega*n)
 shift = 3
@@ -27,16 +27,17 @@ for row in range(p):
     for column in range(row,p):
         W[row][column] = rhh[column-row]
         W[column][row] = rhh[column-row]
-        # LPC spectrum
-        W_inv = np.linalg.inv(W)
-        ak = np.dot(W_inv,D)
-        # LPC cepstrum
-        ck = [ak[0]]
-        for k in range(2,p+1):
-            x1 = ak[k-1]
-            for m in range(1,k):
-                x1 += float(m)/float(k)*ak[m-1]*ck[k-m-1]
-            ck.append(x1)
+# LPC spectrum
+W_inv = np.linalg.inv(W)
+print np.dot(W_inv,W)
+ak = np.dot(W_inv,D)
+# LPC cepstrum
+ck = [ak[0]]
+for k in range(2,p+1):
+    x1 = ak[k-1]
+    for m in range(1,k):
+        x1 += float(m)/float(k)*ak[m-1]*ck[k-m-1]
+    ck.append(x1)
 
 # check
 g = np.empty((len(h)))
@@ -46,7 +47,7 @@ for w in range(len(h)):
         lpc = ak[d]
         lin_model_error -= lpc*h[w-d-1]
     g[w] = lin_model_error if lin_model_error>10**-15 else 0
-    print 'lin_model_error is now ',lin_model_error
+    #print 'lin_model_error is now ',lin_model_error
 
 
 plt.close('all')
