@@ -17,7 +17,7 @@ if not os.path.exists(path+'figs_raw'):
     os.makedirs(path+'figs_raw')
 
 # make figs
-for fname in dirs[:2]:
+for fname in dirs:
     if 'Scored' not in fname:
         continue
     print 'reading file ',fname,'...'
@@ -28,7 +28,7 @@ for fname in dirs[:2]:
         os.makedirs(path+'figs_raw/'+fname[:len(fname)-4])
 
     # copy or command clock?
-    clock_type = 'COPY'
+    clock_type = 'COMMAND'
     x,y,t = [],[],[]
     x_temp,y_temp,t_temp = [],[],[]
 
@@ -84,13 +84,23 @@ for fname in dirs[:2]:
     
     f.close()
 
-    # force all coordinates to be non-negative
+    # change x so that if the whole clock is drawn,
+    # it is oriented correctly
+    xmax = max([max(elt) for elt in x])
+    for w in range(len(x)):
+        x[w] = [xmax+10-elt for elt in x[w]]
+    xmax = max([max(elt) for elt in x])
     xmin = min([min(elt) for elt in x])
+    ymax = max([max(elt) for elt in y])
     ymin = min([min(elt) for elt in y])
     tmin = min([min(elt) for elt in t])
-    x = [list(np.array(elt)-xmin) for elt in x]
-    y = [list(np.array(elt)-ymin) for elt in y]
-    t = [list((np.array(elt)-tmin)/10.) for elt in t] # the time array should have reasonable values
+    # also normalize the size of the word such that all coordinates
+    # are linearly positioned between 0 and 127
+    for w in range(len(x)):
+        x[w] = [127*(elt-xmin)/(xmax-xmin) for elt in x[w]]
+        y[w] = [127*(elt-ymin)/(ymax-ymin) for elt in y[w]]
+        t[w] = [(elt-tmin)/10. for elt in t[w]] # the time array should have reasonable values
+
     # order the strokes chronologically
     symbol_start_times = [elt[0] for elt in t]
     symbol_start_times.sort()
@@ -102,13 +112,6 @@ for fname in dirs[:2]:
     x = [x[symbol_num] for symbol_num in symbol_order]
     y = [y[symbol_num] for symbol_num in symbol_order]
     t = [t[symbol_num] for symbol_num in symbol_order]
-    #for symbol_num in symbol_order:
-        #print 'stroke ',stroke_num,': ',t[stroke_num][0],' to ',t[stroke_num][-1]
-    
-    # get new maxima and minima
-    xmin,xmax = min([min(elt) for elt in x]),max([max(elt) for elt in x])
-    ymin,ymax = min([min(elt) for elt in y]),max([max(elt) for elt in y])
-    tmin,tmax = min([min(elt) for elt in t]),max([max(elt) for elt in t])
 
     # make each of x, y, and t into a single list for animation purposes
     # insert NaN's between the symbols so that they are not connected together
@@ -125,13 +128,13 @@ for fname in dirs[:2]:
     fig_xy = plt.figure()
     fig_xy.text(0.99, 0.96, fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
     xy = fig_xy.add_subplot(111,projection='3d')
-    xy.plot(y,xmax+10-x,t,color='blue')
+    xy.plot(y,x,t,color='blue')
     xy.set_xlabel('y',fontsize=20)
     xy.set_ylabel('x',fontsize=20)
     xy.set_zlabel('t',fontsize=20)
-    xy.set_xlim(xmin-10,xmax+10)
-    xy.set_ylim(ymin-10,ymax+10)
-    xy.set_zlim(tmin-10,tmax+10)
+    xy.set_xlim(left=-10,right=140)
+    xy.set_ylim(bottom=-10,top=140)
+    xy.set_zlim(-10,4500)
     plt.axis('equal')
     
     if 'YDU' in fname:
@@ -141,10 +144,6 @@ for fname in dirs[:2]:
     else:
         print 'not a valid filename'
     
-    #xy.spines['right'].set_position('zero')
-    #xy.spines['top'].set_position('zero')
-    #xy.spines['left'].set_position('zero')
-    #xy.spines['bottom'].set_position('zero')
     xy.view_init(30,0)
     #plt.show()
     
