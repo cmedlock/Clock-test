@@ -34,6 +34,7 @@ if not os.path.exists(path+'figs_raw'):
 
 # arrays to store the polar coordinates of all clocks
 # each clock should be labeled as either healthy or impaired
+x_all,y_all = [],[]
 r_all,theta_all = [],[]
 
 # save interesting quantities
@@ -41,7 +42,7 @@ corr_x,corr_y = [],[]
 Ediff_x,Ediff_y = [],[]
 
 # copy or command clock?
-clock_type = 'COPY'
+clock_type = 'COMMAND'
 
 for fname in dirs:
     if 'Scored' not in fname:
@@ -161,6 +162,10 @@ for fname in dirs:
 	        break
         x_eqdist.append(x_interp[idx])
         y_eqdist.append(y_interp[idx])
+    
+    # store, plot outside of loop
+    x_all.append((ftype,x_eqdist))
+    y_all.append((ftype,y_eqdist))
 
 #    # now want to estimate the frequency of the underlying sinusoid
 #    # subtract mean values (zm = zero mean)
@@ -293,7 +298,9 @@ for fname in dirs:
     for w in range(len(x_eqdist)):
         dx,dy = x_eqdist[w]-x_com,y_eqdist[w]-y_com
         dist = sqrt(dx**2+dy**2)
-        angle = math.atan(dy/dx)
+        angle = math.atan2(dy,dx)
+        if angle<0:
+            angle = angle+2*pi
         r.append(dist)
         theta.append(angle)
     r,theta = np.array(r),np.array(theta)
@@ -430,10 +437,17 @@ for fname in dirs:
 #    fig_yt.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/y_true_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
 
 # separate polar coordinates into healthy and impaired
+x_all_healthy = [elt[1] for elt in x_all if elt[0]=='healthy']
+y_all_healthy = [elt[1] for elt in y_all if elt[0]=='healthy']
 r_all_healthy = [elt[1] for elt in r_all if elt[0]=='healthy']
 theta_all_healthy = [elt[1] for elt in theta_all if elt[0]=='healthy']
+x_all_impaired = [elt[1] for elt in x_all if elt[0]=='impaired']
+y_all_impaired = [elt[1] for elt in y_all if elt[0]=='impaired']
 r_all_impaired = [elt[1] for elt in r_all if elt[0]=='impaired']
 theta_all_impaired = [elt[1] for elt in theta_all if elt[0]=='impaired']
+
+if not os.path.exists(path+'compare_healthy_impaired/all_clocks_overlaid'):
+    os.makedirs(path+'compare_healthy_impaired/all_clocks_overlaid')
 
 # plot
 plt.close('all')
@@ -441,7 +455,42 @@ fig_healthy,fig_impaired = plt.figure(),plt.figure()
 healthy,impaired = fig_healthy.add_subplot(111),fig_impaired.add_subplot(111)
 fig_healthy.text(0.32, 0.955, 'HEALTHY ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
 fig_impaired.text(0.32, 0.955, 'IMPAIRED ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+
+# just x
+for w in range(len(x_all_healthy)):
+    healthy.plot(x_all_healthy[w],color='blue')
+for w in range(len(x_all_impaired)):
+    impaired.plot(x_all_impaired[w],color='blue')
+healthy.set_xlabel('n',fontsize=20)
+healthy.set_ylabel('x',fontsize=20)
+healthy.set_ylim(bottom=-20,top=140)
+impaired.set_xlabel('n',fontsize=20)
+impaired.set_ylabel('x',fontsize=20)
+impaired.set_ylim(bottom=-20,top=140)
+
+fig_healthy.savefig(path+'compare_healthy_impaired/all_clocks_overlaid/'+'/healthy_'+clock_type+'_clocks_x.png')
+fig_impaired.savefig(path+'compare_healthy_impaired/all_clocks_overlaid/'+'/impaired_'+clock_type+'_clocks_x.png')
+
+# just y
+healthy.clear()
+impaired.clear()
+for w in range(len(y_all_healthy)):
+    healthy.plot(y_all_healthy[w],color='blue')
+for w in range(len(y_all_impaired)):
+    impaired.plot(y_all_impaired[w],color='blue')
+healthy.set_xlabel('n',fontsize=20)
+healthy.set_ylabel('y',fontsize=20)
+healthy.set_ylim(bottom=-20,top=140)
+impaired.set_xlabel('n',fontsize=20)
+impaired.set_ylabel('y',fontsize=20)
+impaired.set_ylim(bottom=-20,top=140)
+
+fig_healthy.savefig(path+'compare_healthy_impaired/all_clocks_overlaid/'+'/healthy_'+clock_type+'_clocks_y.png')
+fig_impaired.savefig(path+'compare_healthy_impaired/all_clocks_overlaid/'+'/impaired_'+clock_type+'_clocks_y.png')
+
 # just r
+healthy.clear()
+impaired.clear()
 for w in range(len(r_all_healthy)):
     healthy.plot(r_all_healthy[w],color='blue')
 for w in range(len(r_all_impaired)):
@@ -465,10 +514,10 @@ for w in range(len(theta_all_impaired)):
     impaired.plot(theta_all_impaired[w],color='blue')
 healthy.set_xlabel('n',fontsize=20)
 healthy.set_ylabel(r'$\theta$',fontsize=20)
-healthy.set_ylim(bottom=-3.5,top=3.5)
+healthy.set_ylim(bottom=0,top=6.5)
 impaired.set_xlabel('n',fontsize=20)
 impaired.set_ylabel(r'$\theta$',fontsize=20)
-impaired.set_ylim(bottom=-3.5,top=3.5)
+impaired.set_ylim(bottom=0,top=6.5)
 
 fig_healthy.savefig(path+'compare_healthy_impaired/all_clocks_overlaid/'+'/healthy_'+clock_type+'_clocks_theta.png')
 fig_impaired.savefig(path+'compare_healthy_impaired/all_clocks_overlaid/'+'/impaired_'+clock_type+'_clocks_theta.png')
@@ -482,15 +531,12 @@ for w in range(len(r_all_impaired)):
     impaired.plot(theta_all_impaired[w],r_all_impaired[w],color='blue')
 healthy.set_xlabel(r'$\theta$',fontsize=20)
 healthy.set_ylabel(r'$r$',fontsize=20)
-healthy.set_xlim(left=-3.5,right=3.5)
+healthy.set_xlim(left=0,right=6.5)
 healthy.set_ylim(bottom=35,top=85)
 impaired.set_xlabel(r'$\theta$',fontsize=20)
 impaired.set_ylabel(r'$r$',fontsize=20)
-impaired.set_xlim(left=-3.5,right=3.5)
+impaired.set_xlim(left=0,right=6.5)
 impaired.set_ylim(bottom=35,top=85)
 
 fig_healthy.savefig(path+'compare_healthy_impaired/all_clocks_overlaid/'+'/healthy_'+clock_type+'_clocks_rtheta.png')
 fig_impaired.savefig(path+'compare_healthy_impaired/all_clocks_overlaid/'+'/impaired_'+clock_type+'_clocks_rtheta.png')
-
-if not os.path.exists(path+'compare_healthy_impaired/all_clocks_overlaid'):
-    os.makedirs(path+'compare_healthy_impaired/all_clocks_overlaid')
