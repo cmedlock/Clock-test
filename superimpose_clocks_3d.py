@@ -9,6 +9,9 @@ import numpy as np
 import os
 from pylab import *
 
+import clock_test as ct
+ct = reload(ct)
+
 # path to data
 path = '/Users/cmedlock/Documents/DSP_UROP/all_data/'
 dirs = os.listdir(path)
@@ -135,7 +138,7 @@ for fname in dirs:
         t_long = t_long+t[w]+[np.nan]
     # rename
     x,y,t = np.array(x_long),np.array(y_long),np.array(t_long)
-        
+    
     # store, plot outside the loop
     x_all.append((ftype,x))
     y_all.append((ftype,y))
@@ -149,7 +152,16 @@ x_all_impaired = [elt[1] for elt in x_all if elt[0]=='impaired']
 y_all_impaired = [elt[1] for elt in y_all if elt[0]=='impaired']
 t_all_impaired = [elt[1] for elt in t_all if elt[0]=='impaired']
 
-# plot
+# compare total times taken to draw each clock
+tmax_all = []
+for (ftype,t) in t_all:
+    no_nans = [elt for elt in list(t) if elt!=np.nan]
+    tmax_all.append((ftype,max(no_nans)))
+ct.make_hist([elt[1] for elt in tmax_all if elt[0]=='healthy'],
+             [elt[1] for elt in tmax_all if elt[0]=='impaired'],
+             10,clock_type+' Clock: Total Drawing Time (s)','total_time_'+clock_type,path)
+"""   
+# plot clocks
 plt.close('all')
 fig_healthy,fig_impaired = plt.figure(),plt.figure()
 healthy,impaired = fig_healthy.add_subplot(111,projection='3d'),fig_impaired.add_subplot(111,projection='3d')
@@ -186,10 +198,32 @@ for angle in elev_angles:
     fig_healthy.text(0.32, 0.955, 'HEALTHY ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
     fig_impaired.text(0.32, 0.955, 'IMPAIRED ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
         
-    fig_healthy.text(0.82, 0.955, 'Elev. angle = '+str(angle)+' degrees',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
-    fig_impaired.text(0.82, 0.955, 'Elev. angle = '+str(angle)+' degrees',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+    fig_healthy.text(0.36, 0.905, 'Elev. angle = '+str(angle)+' degrees',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+    fig_impaired.text(0.36, 0.905, 'Elev. angle = '+str(angle)+' degrees',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
 
     fig_healthy.savefig(path+'compare_healthy_impaired/all_clocks_overlaid/'+
                         '/healthy_'+clock_type+'_clocks_3d_elev_'+str(angle)+'.png')
     fig_impaired.savefig(path+'compare_healthy_impaired/all_clocks_overlaid/'+
                         '/impaired_'+clock_type+'_clocks_3d_elev_'+str(angle)+'.png')
+# for some reason the label for the second angle always comes out wrong
+elev_angles = [-60]
+for angle in elev_angles:
+    healthy.view_init(angle,0)
+    impaired.view_init(angle,0)
+    
+    for text in fig_healthy.texts:
+        text.remove()
+    for text in fig_impaired.texts:
+        text.remove()
+
+    fig_healthy.text(0.32, 0.955, 'HEALTHY ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+    fig_impaired.text(0.32, 0.955, 'IMPAIRED ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        
+    fig_healthy.text(0.36, 0.905, 'Elev. angle = '+str(angle)+' degrees',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+    fig_impaired.text(0.36, 0.905, 'Elev. angle = '+str(angle)+' degrees',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+
+    fig_healthy.savefig(path+'compare_healthy_impaired/all_clocks_overlaid/'+
+                        '/healthy_'+clock_type+'_clocks_3d_elev_'+str(angle)+'.png')
+    fig_impaired.savefig(path+'compare_healthy_impaired/all_clocks_overlaid/'+
+                        '/impaired_'+clock_type+'_clocks_3d_elev_'+str(angle)+'.png')
+"""
