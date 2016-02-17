@@ -42,7 +42,7 @@ corr_x,corr_y = [],[]
 Ediff_x,Ediff_y = [],[]
 
 # copy or command clock?
-clock_type = 'COMMAND'
+clock_type = 'COPY'
 
 for fname in dirs:
     if 'Scored' not in fname:
