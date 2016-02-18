@@ -11,6 +11,14 @@ import numpy as np
 import os
 from pylab import *
 
+def init_anim():
+    line.set_data([],[])
+    return line,
+    
+def animate(nitr,a,b):
+    line.set_data(a[:nitr+1],b[:nitr+1])
+    return line,
+    
 def update_lines(num, dataLines, lines):
     for line, data in zip(lines, dataLines):
         # NOTE: there is no .set_data() for 3 dim data...
@@ -138,8 +146,8 @@ for fname in dirs[4:5]:
     # order the points by the sum of their x and y coordinates
     sum_xy = []
     for w in range(len(x)):
-        sum_xy.append((w,x[w][1]+y[w][1]))
-        #sum_xy.append((w,x[w][1]+y[w][1]+5*t[w][1]))
+        #sum_xy.append((w,x[w][1]+y[w][1]))
+        sum_xy.append((w,x[w][1]+y[w][1]+5*t[w][1]))
     sum_xy = sorted(sum_xy,key=lambda elt: elt[1])
     point_order = [elt[0] for elt in sum_xy]
     x = [x[idx][1] for idx in point_order][::-1]
@@ -150,11 +158,11 @@ for fname in dirs[4:5]:
     plt.close('all')
     fig_xy = plt.figure()
     fig_xy.text(0.99, 0.96, fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
-    xy = fig_xy.add_subplot(111,projection='3d')
+    xy = fig_xy.add_subplot(111)#,projection='3d')
     #xy.plot(y,x,t,color='blue')
     xy.set_xlabel('x',fontsize=20)
     xy.set_ylabel('y',fontsize=20)
-    xy.set_zlabel('t',fontsize=20)
+    #xy.set_zlabel('t',fontsize=20)
     
     if 'YDU' in fname:
         fig_xy.text(0.32, 0.955, 'HEALTHY ('+clock_type,+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
@@ -163,19 +171,29 @@ for fname in dirs[4:5]:
     else:
         print 'not a valid filename'
 
-    data = [np.array([y,x,t])] # connect all symbols
-    lines = [xy.plot(dat[0, 0:1], dat[1, 0:1], dat[2, 0:1],'o',markersize=2)[0] for dat in data]
+    # 2d animation
+    line, = xy.plot([],[],'o',markersize=2,lw=2)
+    xy_anim = anim.FuncAnimation(fig_xy,animate,frames=len(x),
+                                      init_func=init_anim,fargs=(y,x),
+                                      interval=13,blit=True,repeat=False)
+    plt.draw() # don't delete this
+    #xy_anim.save(path+'figs_raw/'+fname[:len(fname)-4]+'/'+clock_type+'_whole_clock_anim_angle2d_'+fname[:len(fname)-4]+'.mp4',
+                 #writer=FFwriter,extra_args=['-vcodec','libx264'])
 
-    xy_anim = anim.FuncAnimation(fig_xy, update_lines, len(x), fargs=(data, lines), interval=13, blit=False) # connect all symbols
+    # 3d animation
+    #data = [np.array([y,x,t])] # connect all symbols
+    #lines = [xy.plot(dat[0, 0:1], dat[1, 0:1], dat[2, 0:1],'o',markersize=2)[0] for dat in data]
 
-    xy.view_init(0,-45) # check the regular animation (projection onto the xy-plane)
+    #xy_anim = anim.FuncAnimation(fig_xy, update_lines, len(x), fargs=(data, lines), interval=13, blit=False) # connect all symbols
+
+    #xy.view_init(0,-45) # check the regular animation (projection onto the xy-plane)
     
     # axis limits need to be set after the animation is drawn (not true for a 3d figure)
     xy.set_xlim(-10,140)
     xy.set_ylim(-10,140)
-    xy.set_zlim(-10,45)
+    #xy.set_zlim(-10,45)
 
-    plt.draw() # don't delete this
+    #plt.draw() # don't delete this
     #xy_anim.save(path+'figs_raw/'+fname[:len(fname)-4]+'/'+clock_type+'_whole_clock_anim_angle2d_'+fname[:len(fname)-4]+'.mp4',
     #             writer=FFwriter,extra_args=['-vcodec','libx264'])
 
