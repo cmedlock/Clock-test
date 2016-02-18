@@ -30,6 +30,9 @@ dirs = os.listdir(path)
 if not os.path.exists(path+'figs_raw'):
     os.makedirs(path+'figs_raw')
 
+# copy or command clock?
+clock_type = 'COMMAND'
+
 # make figs
 for fname in dirs[4:5]:
     if 'Scored' not in fname:
@@ -41,8 +44,6 @@ for fname in dirs[4:5]:
     if not os.path.exists(path+'figs_raw/'+fname[:len(fname)-4]):
         os.makedirs(path+'figs_raw/'+fname[:len(fname)-4])
 
-    # copy or command clock?
-    clock_type = 'COMMAND'
     x,y,t = [],[],[]
     x_temp,y_temp,t_temp = [],[],[]
 
@@ -113,8 +114,17 @@ for fname in dirs[4:5]:
     for w in range(len(x)):
         x[w] = [127*(elt-xmin)/(xmax-xmin) for elt in x[w]]
         y[w] = [127*(elt-ymin)/(ymax-ymin) for elt in y[w]]
-        t[w] = [(elt-tmin)/10. for elt in t[w]] # the time array should have reasonable values
+        t[w] = [(elt-tmin)/1000. for elt in t[w]] # the time array should have reasonable values
     
+    # label each point with a number that represents what symbol it is a part of
+    # this is necessary for animating the clock at a different angle, since the symbols
+    # won't be drawn one after another anymore
+    for w in range(len(x)):
+        for d in range(len(x[w])):
+            x[w][d] = (w,x[w][d])
+            y[w][d] = (w,y[w][d])
+            t[w][d] = (w,t[w][d])
+           
     # make each of x, y, and t into a single list for animation purposes
     # insert NaN's between the symbols so that they are not connected together
     x_long,y_long,t_long = x[0],y[0],t[0]
@@ -123,17 +133,18 @@ for fname in dirs[4:5]:
         y_long = y_long+y[w]
         t_long = t_long+t[w]
     # rename
-    x,y,t = np.array(x_long),np.array(y_long),np.array(t_long)
+    x,y,t = x_long,y_long,t_long
 
     # order the points by the sum of their x and y coordinates
     sum_xy = []
     for w in range(len(x)):
-        sum_xy.append((w,x[w]+y[w]))
+        sum_xy.append((w,x[w][1]+y[w][1]))
+        #sum_xy.append((w,x[w][1]+y[w][1]+5*t[w][1]))
     sum_xy = sorted(sum_xy,key=lambda elt: elt[1])
     point_order = [elt[0] for elt in sum_xy]
-    x = np.array([x[idx] for idx in point_order])
-    y = np.array([y[idx] for idx in point_order])
-    t = np.array([t[idx] for idx in point_order])
+    x = [x[idx][1] for idx in point_order][::-1]
+    y = [y[idx][1] for idx in point_order][::-1]
+    t = [t[idx][1] for idx in point_order][::-1]
 
     # plot
     plt.close('all')
@@ -146,23 +157,23 @@ for fname in dirs[4:5]:
     xy.set_zlabel('t',fontsize=20)
     
     if 'YDU' in fname:
-        fig_xy.text(0.25, 0.955, 'HEALTHY',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_xy.text(0.32, 0.955, 'HEALTHY ('+clock_type,+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
     elif 'CIN' in fname:
-        fig_xy.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+        fig_xy.text(0.32, 0.955, 'IMPAIRED ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
     else:
         print 'not a valid filename'
 
     data = [np.array([y,x,t])] # connect all symbols
-    lines = [xy.plot(dat[0, 0:1], dat[1, 0:1], dat[2, 0:1])[0] for dat in data]
+    lines = [xy.plot(dat[0, 0:1], dat[1, 0:1], dat[2, 0:1],'o',markersize=2)[0] for dat in data]
 
     xy_anim = anim.FuncAnimation(fig_xy, update_lines, len(x), fargs=(data, lines), interval=13, blit=False) # connect all symbols
 
-    xy.view_init(90,0) # check the regular animation (projection onto the xy-plane)
+    xy.view_init(0,-45) # check the regular animation (projection onto the xy-plane)
     
     # axis limits need to be set after the animation is drawn (not true for a 3d figure)
     xy.set_xlim(-10,140)
     xy.set_ylim(-10,140)
-    xy.set_zlim(-10,4500)
+    xy.set_zlim(-10,45)
 
     plt.draw() # don't delete this
     #xy_anim.save(path+'figs_raw/'+fname[:len(fname)-4]+'/'+clock_type+'_whole_clock_anim_angle2d_'+fname[:len(fname)-4]+'.mp4',
