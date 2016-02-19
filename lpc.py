@@ -29,19 +29,28 @@ if not os.path.exists(path+'figs_raw'):
     os.makedirs(path+'figs_raw')
 
 # copy or command clock?
-clock_type = 'COMMAND'
+clock_type = 'COPY'
 
-# save interesting quantities
 # model order
 p = 2
+# save interesting quantities to compare between healthy and impaired patients
+# format is [[('healthy',ak_1 val),('healthy',ak_1 val),('impaired',ak_1 val),...]
+#            [ same thing for ak_2 ],...
+#            [ same thing for ak_p]]
 ak_x_coeffs,ak_y_coeffs = [],[]
 ck_x_coeffs,ck_y_coeffs = [],[]
+Eg_x_x,Eg_x_y = [],[] # energy in g[n] (i.e. linear prediction error) when predicting x[n]
+Eg_y_x,Eg_y_y = [],[] # energy in g[n] (i.e. linear prediction error) when predicting y[n]
 for w in range(p):
     ak_x_coeffs.append([])
     ak_y_coeffs.append([])
     ck_x_coeffs.append([])
     ck_y_coeffs.append([])
-    
+    Eg_x_x.append([])
+    Eg_x_y.append([])
+    Eg_y_x.append([])
+    Eg_y_y.append([])
+
 for fname in dirs:
     if 'Scored' not in fname:
         continue
@@ -164,7 +173,6 @@ for fname in dirs:
 
     # form all-pole model using Y-W eqns
 
-    p = 2 # model order
     # 'circular' autocorrelation
     rxx,ryy = [],[]
     x_periodic,y_periodic = np.concatenate((x_eqdist,x_eqdist)),np.concatenate((y_eqdist,y_eqdist))
@@ -195,6 +203,31 @@ for fname in dirs:
         ck_x.append(x1)
         ck_y.append(y1)
 
+    # impulse response of linear prediction filter
+    a_x,a_y = [1],[1]
+    for w in range(p):
+        a_x.append(-float(ak_x[w]))
+        a_y.append(-float(ak_y[w]))
+
+    # linear prediction error (LPE):
+    g_x_x = np.empty((len(x_eqdist)+p)) # predict x[n] with x[n] model
+    g_x_y = np.empty((len(x_eqdist)+p)) # predict x[n] with y[n] model
+    g_y_x = np.empty((len(y_eqdist)+p)) # predict y[n] with x[n] model
+    g_y_y = np.empty((len(y_eqdist)+p)) # predict y[n] with y[n] model
+    for w in range(len(x_eqdist)+p):
+        lpe_x_x,lpe_x_y,lpe_y_x,lpe_y_y = 0,0,0,0
+        for d in range(len(a_x)):
+            if w-d<len(x_eqdist):
+                lpe_x_x += x_eqdist[w-d]*a_x[d]
+                lpe_x_y += x_eqdist[w-d]*a_y[d]
+                lpe_y_x += x_eqdist[w-d]*a_x[d]
+                lpe_y_y += y_eqdist[w-d]*a_y[d]
+        g_x_x[w] = lpe_x_x if lpe_x_x>10**-15 else 0
+        g_x_y[w] = lpe_x_y if lpe_x_y>10**-15 else 0
+        g_y_x[w] = lpe_y_x if lpe_y_x>10**-15 else 0
+        g_y_y[w] = lpe_y_y if lpe_y_y>10**-15 else 0
+    g_x_x,g_x_y,g_y_x,g_y_y = np.array(g_x_x),np.array(g_x_y),np.array(g_y_x),np.array(g_y_y)
+    
     # store the coefficients for comparison between the drawings of healthy
     # and impaired patients
     for m in range(p):
@@ -202,7 +235,11 @@ for fname in dirs:
         ak_y_coeffs[m].append((ftype,ak_y[m]))
         ck_x_coeffs[m].append((ftype,ck_x[m]))
         ck_y_coeffs[m].append((ftype,ck_y[m]))
-        
+        Eg_x_x[m].append((ftype,sum(g_x_x**2)))
+        Eg_x_y[m].append((ftype,sum(g_x_y**2)))
+        Eg_y_x[m].append((ftype,sum(g_y_x**2)))
+        Eg_y_y[m].append((ftype,sum(g_y_y**2)))
+           
     # plot
     plt.close('all')
     fig_x = plt.figure()
@@ -250,3 +287,16 @@ for w in range(p):
     ct.make_hist([elt[1] for elt in ak_y_coeffs[w] if elt[0]=='healthy'],
                 [elt[1] for elt in ak_y_coeffs[w] if elt[0]=='impaired'],
                 10,clock_type+' Clock LPC Cepstrum: c_'+str(w)+' (y)','c'+str(w)+'_y_'+clock_type,path)
+    # linear prediction error
+    ct.make_hist([elt[1] for elt in Eg_x_x[w] if elt[0]=='healthy'],
+                [elt[1] for elt in Eg_x_x[w] if elt[0]=='impaired'],
+                10,clock_type+' Clock LPE: Model x[n] using x[n]','LPE_x_x_'+clock_type,path)
+    ct.make_hist([elt[1] for elt in Eg_x_y[w] if elt[0]=='healthy'],
+                [elt[1] for elt in Eg_x_y[w] if elt[0]=='impaired'],
+                10,clock_type+' Clock LPE: Model x[n] using y[n]','LPE_x_y_'+clock_type,path)
+    ct.make_hist([elt[1] for elt in Eg_y_x[w] if elt[0]=='healthy'],
+                [elt[1] for elt in Eg_y_x[w] if elt[0]=='impaired'],
+                10,clock_type+' Clock LPE: Model y[n] using x[n]','LPE_y_x_'+clock_type,path)
+    ct.make_hist([elt[1] for elt in Eg_y_y[w] if elt[0]=='healthy'],
+                [elt[1] for elt in Eg_y_y[w] if elt[0]=='impaired'],
+                10,clock_type+' Clock LPE: Model y[n] using y[n]','LPE_y_y_'+clock_type,path)
