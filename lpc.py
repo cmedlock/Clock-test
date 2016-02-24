@@ -32,7 +32,7 @@ if not os.path.exists(path+'figs_raw'):
 clock_type = 'COPY'
 
 # model order
-p = 2
+p = 3
 # save interesting quantities to compare between healthy and impaired patients
 # format is [[('healthy',ak_1 val),('healthy',ak_1 val),('impaired',ak_1 val),...]
 #            [ same thing for ak_2 ],...
@@ -69,8 +69,6 @@ for fname in dirs:
 
     if not os.path.exists(path+'figs_raw/'+fname[:len(fname)-4]):
         os.makedirs(path+'figs_raw/'+fname[:len(fname)-4])
-    if not os.path.exists(path+'figs_raw/'+fname[:len(fname)-4]+'/LPC'):
-        os.makedirs(path+'figs_raw/'+fname[:len(fname)-4]+'/LPC')
 
     x,y,t = [],[],[]
 
@@ -122,6 +120,7 @@ for fname in dirs:
     y = 127*(y-min(y))/(max(y)-min(y))
 
     # compensate for non-constant velocity
+    
     N_orig = len(x)
     N_new = 250
 
@@ -179,6 +178,9 @@ for fname in dirs:
     for w in range(p+1):
         rxx.append(np.dot(x_eqdist,x_periodic[w:w+len(x_eqdist)]))
         ryy.append(np.dot(y_eqdist,y_periodic[w:w+len(y_eqdist)]))
+        # covariance method
+        #rxx.append(np.dot(x_eqdist[p-w:],x_periodic[p-w:w+len(x_eqdist)]))
+        #ryy.append(np.dot(y_eqdist[p-w:],y_periodic[p-w:w+len(y_eqdist)]))
     # calculate linear prediction coefficients
     D_x,D_y = np.array(rxx[1:p+1]),np.array(ryy[1:p+1])
     W_x,W_y = np.empty((p,p)),np.empty((p,p))
@@ -216,17 +218,34 @@ for fname in dirs:
     g_y_y = np.empty((len(y_eqdist)+p)) # predict y[n] with y[n] model
     for w in range(len(x_eqdist)+p):
         lpe_x_x,lpe_x_y,lpe_y_x,lpe_y_y = 0,0,0,0
+        #if w>248:
+            #print 'w = ',w
         for d in range(len(a_x)):
-            if w-d<len(x_eqdist):
-                lpe_x_x += x_eqdist[w-d]*a_x[d]
-                lpe_x_y += x_eqdist[w-d]*a_y[d]
-                lpe_y_x += x_eqdist[w-d]*a_x[d]
-                lpe_y_y += y_eqdist[w-d]*a_y[d]
+            if w-d<len(x_eqdist)+p:
+                #if w>248:
+                    #print '***   ',w-d,d
+                lpe_x_x += x_periodic[w-d]*a_x[d]
+                lpe_x_y += x_periodic[w-d]*a_y[d]
+                lpe_y_x += x_periodic[w-d]*a_x[d]
+                lpe_y_y += y_periodic[w-d]*a_y[d]
         g_x_x[w] = lpe_x_x if lpe_x_x>10**-15 else 0
         g_x_y[w] = lpe_x_y if lpe_x_y>10**-15 else 0
         g_y_x[w] = lpe_y_x if lpe_y_x>10**-15 else 0
         g_y_y[w] = lpe_y_y if lpe_y_y>10**-15 else 0
     g_x_x,g_x_y,g_y_x,g_y_y = np.array(g_x_x),np.array(g_x_y),np.array(g_y_x),np.array(g_y_y)
+    # total energy in linear prediction error,
+    # normalized by total energy in original signal
+    # multiply by 10**3 so that the numbers are
+    # readable
+    energy_x_x = sum(g_x_x[-p:]**2)/sum(np.array(x_eqdist)**2)*10**3
+    energy_x_y = sum(g_x_y[-p:]**2)/sum(np.array(x_eqdist)**2)*10**3
+    energy_y_x = sum(g_y_x[-p:]**2)/sum(np.array(y_eqdist)**2)*10**3
+    energy_y_y = sum(g_y_y[-p:]**2)/sum(np.array(y_eqdist)**2)*10**3
+    # linear prediction of x[n] or y[n]
+    xhat_x_x = -g_x_x[:-p]+x_eqdist
+    xhat_x_y = -g_x_y[:-p]+x_eqdist
+    yhat_y_x = -g_y_x[:-p]+y_eqdist
+    yhat_y_y = -g_y_y[:-p]+y_eqdist
     
     # store the coefficients for comparison between the drawings of healthy
     # and impaired patients
@@ -235,68 +254,98 @@ for fname in dirs:
         ak_y_coeffs[m].append((ftype,ak_y[m]))
         ck_x_coeffs[m].append((ftype,ck_x[m]))
         ck_y_coeffs[m].append((ftype,ck_y[m]))
-        Eg_x_x[m].append((ftype,sum(g_x_x**2)))
-        Eg_x_y[m].append((ftype,sum(g_x_y**2)))
-        Eg_y_x[m].append((ftype,sum(g_y_x**2)))
-        Eg_y_y[m].append((ftype,sum(g_y_y**2)))
-           
+        Eg_x_x[m].append((ftype,energy_x_x))
+        Eg_x_y[m].append((ftype,energy_x_y))
+        Eg_y_x[m].append((ftype,energy_y_x))
+        Eg_y_y[m].append((ftype,energy_y_y))
+    """
     # plot
     plt.close('all')
-    fig_x = plt.figure()
-    ax_xspec,ax_xcep = fig_x.add_subplot(211),fig_x.add_subplot(212)
-    ax_xspec.stem(ak_x)
-    ax_xcep.stem(ck_x)
-    ax_xspec.set_xlim(left=-1,right=len(ak_x))
-    ax_xcep.set_xlim(left=-1,right=len(ck_x))
-    ymin_spec = min(ak_x)*1.2 if min(ak_x)<0 else 0
-    ymin_cep = min(ck_x)*1.2 if min(ck_x)<0 else 0
-    ax_xspec.set_ylim(top=max(ak_x)*1.2,bottom=ymin_spec)
-    ax_xcep.set_ylim(top=max(ck_x)*1.2,bottom=ymin_cep)
-    ax_xspec.set_ylabel('$a_{kx}$',fontsize=20)
-    ax_xcep.set_ylabel('$c_{kx}$',fontsize=20)
-    
-    fig_y = plt.figure()
-    ax_yspec,ax_ycep = fig_y.add_subplot(211),fig_y.add_subplot(212)
-    ax_yspec.stem(ak_y)
-    ax_ycep.stem(ck_y)
-    ax_yspec.set_xlim(left=-1,right=len(ak_y))
-    ax_ycep.set_xlim(left=-1,right=len(ck_y))
-    ymin_spec = min(ak_y)*1.2 if min(ak_y)<0 else 0
-    ymin_cep = min(ck_y)*1.2 if min(ck_y)<0 else 0
-    ax_yspec.set_ylim(top=max(ak_y)*1.2,bottom=ymin_spec)
-    ax_ycep.set_ylim(top=max(ck_y)*1.2,bottom=ymin_cep)
-    ax_yspec.set_ylabel('$a_{ky}$',fontsize=20)
-    ax_ycep.set_ylabel('$c_{ky}$',fontsize=20)
-
-    fig_x.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/LPC/lpc_x_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
-    fig_y.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/LPC/lpc_y_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
-
+    np.set_printoptions(precision=2)
+    fig = plt.figure()
+    ax_lin,ax_lpe = fig.add_subplot(211),fig.add_subplot(212)
+    fig.text(0.99, 0.96,fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
+    if ftype=='healthy':
+        fig.text(0.32, 0.955, 'HEALTHY ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+    elif ftype=='impaired':
+        fig.text(0.32, 0.955, 'IMPAIRED ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+    # predict x[n] with x[n] model
+    ax_lin.set_title('Model x[n] using x[n]',fontsize=20)
+    ax_lin.plot(x_eqdist,color='blue',lw=2,label=r'$x_{eqdist}[n]$')
+    ax_lin.plot(xhat_x_x,'k-.',lw=3,label=r'$\hat{x}[n]$')
+    ax_lin.legend(loc='best')
+    ax_lpe.plot(g_x_x[:-p],color='red',lw=2,label='$g[n]$')
+    ax_lpe.legend(loc='best')
+    ax_lpe.text(10,2.3,r'$E_g = $'+str(np.round_(sum(g_x_x[:-p]**2),1)),fontsize=15)
+    ax_lin.set_ylim(bottom=-10,top=140)
+    ax_lpe.set_ylim(bottom=-1,top=3)
+    fig.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/lpc_x_x_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+    # predict x[n] with y[n] model
+    ax_lin.clear()
+    ax_lpe.clear()
+    ax_lin.set_title('Model x[n] using y[n]',fontsize=20)
+    ax_lin.plot(x_eqdist,color='blue',lw=2,label=r'$x_{eqdist}[n]$')
+    ax_lin.plot(xhat_x_y,'k-.',lw=3,label=r'$\hat{x}[n]$')
+    ax_lin.legend(loc='best')
+    ax_lpe.plot(g_x_y[:-p],color='red',lw=2,label='$g[n]$')
+    ax_lpe.legend(loc='best')
+    ax_lpe.text(10,2.3,r'$E_g = $'+str(np.round_(sum(g_x_y[:-p]**2),1)),fontsize=15)
+    ax_lin.set_ylim(bottom=-10,top=140)
+    ax_lpe.set_ylim(bottom=-1,top=3)
+    fig.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/lpc_x_y_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+    # predict y[n] with x[n] model
+    ax_lin.clear()
+    ax_lpe.clear()
+    ax_lin.set_title('Model y[n] using x[n]',fontsize=20)
+    ax_lin.plot(y_eqdist,color='blue',lw=2,label=r'$y_{eqdist}[n]$')
+    ax_lin.plot(yhat_y_x,'k-.',lw=3,label=r'$\hat{y}[n]$')
+    ax_lin.legend(loc='best')
+    ax_lpe.plot(g_y_x[:-p],color='red',lw=2,label='$g[n]$')
+    ax_lpe.legend(loc='best')
+    ax_lpe.text(10,2.3,r'$E_g = $'+str(np.round_(sum(g_y_x[:-p]**2),1)),fontsize=15)
+    ax_lin.set_ylim(bottom=-10,top=140)
+    ax_lpe.set_ylim(bottom=-1,top=3)
+    fig.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/lpc_y_x_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+    # predict y[n] with y[n] model
+    ax_lin.clear()
+    ax_lpe.clear()
+    ax_lin.set_title('Model y[n] using y[n]',fontsize=20)
+    ax_lin.plot(y_eqdist,color='blue',lw=2,label=r'$y_{eqdist}[n]$')
+    ax_lin.plot(yhat_y_y,'k-.',lw=3,label=r'$\hat{y}[n]$')
+    ax_lin.legend(loc='best')
+    ax_lpe.plot(g_y_y[:-p],color='red',lw=2,label='$g[n]$')
+    ax_lpe.legend(loc='best')
+    ax_lpe.text(10,2.3,r'$E_g = $'+str(np.round_(sum(g_y_y[:-p]**2),1)),fontsize=15)
+    ax_lin.set_ylim(bottom=-10,top=140)
+    ax_lpe.set_ylim(bottom=-1,top=3)
+    fig.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/lpc_y_y_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+    """
 # compare LPC spectrum and cepstrum for the drawings of healthy vs. impaired patients
 for w in range(p):
     # LPC spectrum
     ct.make_hist([elt[1] for elt in ak_x_coeffs[w] if elt[0]=='healthy'],
                 [elt[1] for elt in ak_x_coeffs[w] if elt[0]=='impaired'],
-                10,clock_type+' Clock LPC: a_'+str(w)+' (x)','a'+str(w)+'_x_'+clock_type,path)
+                10,' *p='+str(p)+'* '+clock_type+' Clock LPC: a_'+str(w)+' (x)','a'+str(w)+'_x_p'+str(p)+'_'+clock_type,path)
     ct.make_hist([elt[1] for elt in ak_y_coeffs[w] if elt[0]=='healthy'],
                 [elt[1] for elt in ak_y_coeffs[w] if elt[0]=='impaired'],
-                10,clock_type+' Clock LPC: a_'+str(w)+' (y)','a'+str(w)+'_y_'+clock_type,path)
+                10,' *p='+str(p)+'* '+clock_type+' Clock LPC: a_'+str(w)+' (y)','a'+str(w)+'_y_p'+str(p)+'_'+clock_type,path)
     # LPC cepstrum
     ct.make_hist([elt[1] for elt in ck_x_coeffs[w] if elt[0]=='healthy'],
                 [elt[1] for elt in ck_x_coeffs[w] if elt[0]=='impaired'],
-                10,clock_type+' Clock LPC Cepstrum: c_'+str(w)+' (x)','c'+str(w)+'_x_'+clock_type,path)
+                10,' *p='+str(p)+'* '+clock_type+' Clock LPC Cepstrum: c_'+str(w)+' (x)','c'+str(w)+'_x_p'+str(p)+'_'+clock_type,path)
     ct.make_hist([elt[1] for elt in ak_y_coeffs[w] if elt[0]=='healthy'],
                 [elt[1] for elt in ak_y_coeffs[w] if elt[0]=='impaired'],
-                10,clock_type+' Clock LPC Cepstrum: c_'+str(w)+' (y)','c'+str(w)+'_y_'+clock_type,path)
+                10,' *p='+str(p)+'* '+clock_type+' Clock LPC Cepstrum: c_'+str(w)+' (y)','c'+str(w)+'_y_p'+str(p)+'_'+clock_type,path)
     # linear prediction error
     ct.make_hist([elt[1] for elt in Eg_x_x[w] if elt[0]=='healthy'],
                 [elt[1] for elt in Eg_x_x[w] if elt[0]=='impaired'],
-                10,clock_type+' Clock LPE: Model x[n] using x[n]','LPE_x_x_'+clock_type,path)
+                10,' *p='+str(p)+'* '+clock_type+' Clock LPE 10^3: Model x[n] using x[n]','LPE_x_x_p'+str(p)+'_'+clock_type,path)
     ct.make_hist([elt[1] for elt in Eg_x_y[w] if elt[0]=='healthy'],
                 [elt[1] for elt in Eg_x_y[w] if elt[0]=='impaired'],
-                10,clock_type+' Clock LPE: Model x[n] using y[n]','LPE_x_y_'+clock_type,path)
+                10,' *p='+str(p)+'* '+clock_type+' Clock LPE 10^3: Model x[n] using y[n]','LPE_x_y_p'+str(p)+'_'+clock_type,path)
     ct.make_hist([elt[1] for elt in Eg_y_x[w] if elt[0]=='healthy'],
                 [elt[1] for elt in Eg_y_x[w] if elt[0]=='impaired'],
-                10,clock_type+' Clock LPE: Model y[n] using x[n]','LPE_y_x_'+clock_type,path)
+                10,' *p='+str(p)+'* '+clock_type+' Clock LPE 10^3: Model y[n] using x[n]','LPE_y_x_p'+str(p)+'_'+clock_type,path)
     ct.make_hist([elt[1] for elt in Eg_y_y[w] if elt[0]=='healthy'],
                 [elt[1] for elt in Eg_y_y[w] if elt[0]=='impaired'],
-                10,clock_type+' Clock LPE: Model y[n] using y[n]','LPE_y_y_'+clock_type,path)
+                10,' *p='+str(p)+'* '+clock_type+' Clock LPE 10^3: Model y[n] using y[n]','LPE_y_y_p'+str(p)+'_'+clock_type,path)
