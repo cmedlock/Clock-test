@@ -29,12 +29,12 @@ if not os.path.exists(path+'figs_raw'):
     os.makedirs(path+'figs_raw')
 
 # copy or command clock?
-clock_type = 'COMMAND'
+clock_type = 'COPY'
 
 # model order
 p = 2
 # covariance method?
-cov = True
+cov = False
 # save interesting quantities to compare between healthy and impaired patients
 # format is [[('healthy',ak_1 val),('healthy',ak_1 val),('impaired',ak_1 val),...]
 #            [ same thing for ak_2 ],...
@@ -243,10 +243,10 @@ for fname in dirs:
     # normalized by total energy in original signal
     # multiply by 10**3 so that the numbers are
     # readable
-    energy_x_x = sum(g_x_x[-p:]**2)/sum(np.array(x_eqdist)**2)*10**3
-    energy_x_y = sum(g_x_y[-p:]**2)/sum(np.array(x_eqdist)**2)*10**3
-    energy_y_x = sum(g_y_x[-p:]**2)/sum(np.array(y_eqdist)**2)*10**3
-    energy_y_y = sum(g_y_y[-p:]**2)/sum(np.array(y_eqdist)**2)*10**3
+    energy_x_x = sum(g_x_x[:-p]**2)/sum(np.array(x_eqdist)**2)*10**3
+    energy_x_y = sum(g_x_y[:-p]**2)/sum(np.array(x_eqdist)**2)*10**3
+    energy_y_x = sum(g_y_x[:-p]**2)/sum(np.array(y_eqdist)**2)*10**3
+    energy_y_y = sum(g_y_y[:-p]**2)/sum(np.array(y_eqdist)**2)*10**3
     # linear prediction of x[n] or y[n]
     xhat_x_x = -g_x_x[:-p]+x_eqdist
     xhat_x_y = -g_x_y[:-p]+x_eqdist
@@ -282,7 +282,7 @@ for fname in dirs:
     ax_lin.legend(loc='best')
     ax_lpe.plot(g_x_x[:-p],color='red',lw=2,label='$g[n]$')
     ax_lpe.legend(loc='best')
-    ax_lpe.text(10,1.5,r'$E_g/E_{total} = $'+str(np.round_(energy_x_x*10**3,3)),fontsize=15)
+    ax_lpe.text(10,1.5,r'$E_g/E_{total} \times 10^3 = $'+str(np.round_(energy_x_x,3)),fontsize=15)
     ax_lpe.text(10,2.3,'p = '+str(p),fontsize=15)
     ax_lin.set_ylim(bottom=-10,top=140)
     ax_lpe.set_ylim(bottom=-1,top=3)
@@ -297,7 +297,7 @@ for fname in dirs:
     ax_lpe.plot(g_x_y[:-p],color='red',lw=2,label='$g[n]$')
     ax_lpe.legend(loc='best')
     ax_lpe.text(10,2.3,'p = '+str(p),fontsize=15)
-    ax_lpe.text(10,1.5,r'$E_g/E_{total} = $'+str(np.round_(energy_x_y*10**3,3)),fontsize=15)
+    ax_lpe.text(10,1.5,r'$E_g/E_{total} \times 10^3 = $'+str(np.round_(energy_x_y,3)),fontsize=15)
     ax_lin.set_ylim(bottom=-10,top=140)
     ax_lpe.set_ylim(bottom=-1,top=3)
     fig.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/lpc_x_y_p'+str(p)+'_cov'+str(cov)+'_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
@@ -311,7 +311,7 @@ for fname in dirs:
     ax_lpe.plot(g_y_x[:-p],color='red',lw=2,label='$g[n]$')
     ax_lpe.legend(loc='best')
     ax_lpe.text(10,2.3,'p = '+str(p),fontsize=15)
-    ax_lpe.text(10,1.5,r'$E_g/E_{total} = $'+str(np.round_(energy_y_x*10**3,3)),fontsize=15)
+    ax_lpe.text(10,1.5,r'$E_g/E_{total} \times 10^3 = $'+str(np.round_(energy_y_x,3)),fontsize=15)
     ax_lin.set_ylim(bottom=-10,top=140)
     ax_lpe.set_ylim(bottom=-1,top=3)
     fig.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/lpc_y_x_p'+str(p)+'_cov'+str(cov)+'_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
@@ -325,7 +325,7 @@ for fname in dirs:
     ax_lpe.plot(g_y_y[:-p],color='red',lw=2,label='$g[n]$')
     ax_lpe.legend(loc='best')
     ax_lpe.text(10,2.3,'p = '+str(p),fontsize=15)
-    ax_lpe.text(10,1.5,r'$E_g/E_{total} = $'+str(np.round_(energy_y_y*10**3,3)),fontsize=15)
+    ax_lpe.text(10,1.5,r'$E_g/E_{total} \times 10^3 = $'+str(np.round_(energy_y_y,3)),fontsize=15)
     ax_lin.set_ylim(bottom=-10,top=140)
     ax_lpe.set_ylim(bottom=-1,top=3)
     fig.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/lpc_y_y_p'+str(p)+'_cov'+str(cov)+'_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
@@ -349,13 +349,13 @@ for w in range(p):
     # linear prediction error
     ct.make_hist([elt[1] for elt in Eg_x_x[w] if elt[0]=='healthy'],
                 [elt[1] for elt in Eg_x_x[w] if elt[0]=='impaired'],
-                10,' *p='+str(p)+'* '+clock_type+' Clock LPE 10^3: Model x[n] using x[n]','LPE_x_x_p'+str(p)+'_cov'+str(cov)+'_'+clock_type,path)
+                10,' *p='+str(p)+'* '+clock_type+' Clock E_g/E_{total} * 10^3: Model x[n] using x[n]','LPE_x_x_p'+str(p)+'_cov'+str(cov)+'_'+clock_type,path)
     ct.make_hist([elt[1] for elt in Eg_x_y[w] if elt[0]=='healthy'],
                 [elt[1] for elt in Eg_x_y[w] if elt[0]=='impaired'],
-                10,' *p='+str(p)+'* '+clock_type+' Clock LPE 10^3: Model x[n] using y[n]','LPE_x_y_p'+str(p)+'_cov'+str(cov)+'_'+clock_type,path)
+                10,' *p='+str(p)+'* '+clock_type+' Clock E_g/E_{total} * 10^3: Model x[n] using y[n]','LPE_x_y_p'+str(p)+'_cov'+str(cov)+'_'+clock_type,path)
     ct.make_hist([elt[1] for elt in Eg_y_x[w] if elt[0]=='healthy'],
                 [elt[1] for elt in Eg_y_x[w] if elt[0]=='impaired'],
-                10,' *p='+str(p)+'* '+clock_type+' Clock LPE 10^3: Model y[n] using x[n]','LPE_y_x_p'+str(p)+'_cov'+str(cov)+'_'+clock_type,path)
+                10,' *p='+str(p)+'* '+clock_type+' Clock E_g/E_{total} * 10^3: Model y[n] using x[n]','LPE_y_x_p'+str(p)+'_cov'+str(cov)+'_'+clock_type,path)
     ct.make_hist([elt[1] for elt in Eg_y_y[w] if elt[0]=='healthy'],
                 [elt[1] for elt in Eg_y_y[w] if elt[0]=='impaired'],
-                10,' *p='+str(p)+'* '+clock_type+' Clock LPE 10^3: Model y[n] using y[n]','LPE_y_y_p'+str(p)+'_cov'+str(cov)+'_'+clock_type,path)
+                10,' *p='+str(p)+'* '+clock_type+' Clock E_g/E_{total} * 10^3: Model y[n] using y[n]','LPE_y_y_p'+str(p)+'_cov'+str(cov)+'_'+clock_type,path)
