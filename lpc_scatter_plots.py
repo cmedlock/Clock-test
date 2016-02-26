@@ -29,12 +29,12 @@ if not os.path.exists(path+'figs_raw'):
     os.makedirs(path+'figs_raw')
 
 # copy or command clock?
-clock_type = 'COPY'
+clock_type = 'COMMAND'
 
 # model order
 pvals = [2,3]
 # covariance method?
-cov = True
+cov = False
 # save interesting quantities to compare between healthy and impaired patients
 # format is [[('healthy',ak_1 val),('healthy',ak_1 val),('impaired',ak_1 val),...]
 #            [ same thing for ak_2 ],...
@@ -335,7 +335,7 @@ for m in range(2):
     ak_x_impaired = [elt[1][1] for elt in ak_x_coeffs[m] if elt[0]=='impaired']
     
     ax.clear()
-    ax.plot(pvals_x_healthy,ak_x_healthy,color='red',marker='*')
+    ax.scatter(pvals_x_healthy,ak_x_healthy,color='red',marker='o',s=15)
     ax.set_xlabel('p',fontsize=20)
     ax.set_ylabel('a_'+str(m+1)+' (x)',fontsize=20)
-    fig.savefig(path+'compare_healthy_impaired/compare_a'+str(m+1)+'_p'+str(p)+'_cov'+str(cov)+'_'+clock_type+'.png')
+    fig.savefig(path+'compare_healthy_impaired/compare_a'+str(m+1)+'_cov'+str(cov)+'_'+clock_type+'.png')
