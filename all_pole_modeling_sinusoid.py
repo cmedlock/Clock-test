@@ -8,9 +8,9 @@ omega = 2.*pi/250.
 x = 63.5*np.cos(omega*n)+63.5
 y = 63.5*np.cos(omega*n)
 shift = 15
-noise = np.random.normal(loc=0,scale=0.01,size=len(n))
-x = np.concatenate((x[shift:],x[:shift]))#+noise
-y = np.concatenate((y[shift:],y[:shift]))#+noise
+noise = np.random.normal(loc=0,scale=2,size=len(n))
+x = np.concatenate((x[shift:],x[:shift]))+noise
+y = np.concatenate((y[shift:],y[:shift]))+noise
 
 # form model using Y-W eqns
 
@@ -43,6 +43,7 @@ W_y_inv = np.linalg.inv(W_y)
 #print np.dot(W_inv,W)
 ak_x = np.dot(W_x_inv,D_x)
 ak_y = np.dot(W_y_inv,D_y)
+print sum(ak_x),sum(ak_y)
 ## LPC cepstrum
 #ck = [ak[0]]
 #for k in range(2,p+1):
