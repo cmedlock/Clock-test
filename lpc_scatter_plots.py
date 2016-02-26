@@ -29,7 +29,7 @@ if not os.path.exists(path+'figs_raw'):
     os.makedirs(path+'figs_raw')
 
 # copy or command clock?
-clock_type = 'COPY'
+clock_type = 'COMMAND'
 
 # model order
 pvals = [2,3]
@@ -45,10 +45,6 @@ Eg_y_x,Eg_y_y = [],[] # energy in g[n] (i.e. linear prediction error) when predi
 for w in range(3):
     ak_x_coeffs.append([])
     ak_y_coeffs.append([])
-    Eg_x_x.append([])
-    Eg_x_y.append([])
-    Eg_y_x.append([])
-    Eg_y_y.append([])
 
 for fname in dirs:
     if 'Scored' not in fname:
@@ -249,10 +245,10 @@ for fname in dirs:
         for m in range(p):
             ak_x_coeffs[m].append((ftype,(p,ak_x[m])))
             ak_y_coeffs[m].append((ftype,(p,ak_y[m])))
-            Eg_x_x[m].append((ftype,(p,energy_x_x)))
-            Eg_x_y[m].append((ftype,(p,energy_x_y)))
-            Eg_y_x[m].append((ftype,(p,energy_y_x)))
-            Eg_y_y[m].append((ftype,(p,energy_y_y)))
+        Eg_x_x.append((ftype,(p,energy_x_x)))
+        Eg_x_y.append((ftype,(p,energy_x_y)))
+        Eg_y_x.append((ftype,(p,energy_y_x)))
+        Eg_y_y.append((ftype,(p,energy_y_y)))
         
         # plot
         plt.close('all')
@@ -334,8 +330,9 @@ for m in range(2):
     ak_x_impaired = [elt[1][1] for elt in ak_x_coeffs[m] if elt[0]=='impaired']
     
     ax.clear()
-    ax.scatter(pvals_x_healthy,ak_x_healthy,color='red',marker='o',s=200,alpha=0.5)
-    ax.scatter(pvals_x_impaired,ak_x_impaired,color='blue',marker='o',s=200,alpha=0.5)
+    ax.scatter(pvals_x_healthy,ak_x_healthy,color='red',marker='o',s=200,alpha=0.5,label='Healthy')
+    ax.scatter(pvals_x_impaired,ak_x_impaired,color='blue',marker='o',s=200,alpha=0.5,label='Impaired')
+    ax.legend(loc='lower center',frameon=False)
     ax.set_xlabel('p',fontsize=20)
     ax.set_ylabel('a_'+str(m+1)+' (x)',fontsize=20)
     fig.savefig(path+'compare_healthy_impaired/compare_a'+str(m+1)+'_cov'+str(cov)+'_'+clock_type+'.png')
@@ -347,8 +344,9 @@ for m in range(2):
     ak_y_impaired = [elt[1][1] for elt in ak_y_coeffs[m] if elt[0]=='impaired']
     
     ax.clear()
-    ax.scatter(pvals_y_healthy,ak_y_healthy,color='red',marker='o',s=200,alpha=0.5)
-    ax.scatter(pvals_y_impaired,ak_y_impaired,color='blue',marker='o',s=200,alpha=0.5)
+    ax.scatter(pvals_y_healthy,ak_y_healthy,color='red',marker='o',s=200,alpha=0.5,label='Healthy')
+    ax.scatter(pvals_y_impaired,ak_y_impaired,color='blue',marker='o',s=200,alpha=0.5,label='Impaired')
+    ax.legend(loc='lower center',frameon=False)
     ax.set_xlabel('p',fontsize=20)
     ax.set_ylabel('a_'+str(m+1)+' (y)',fontsize=20)
     fig.savefig(path+'compare_healthy_impaired/compare_a'+str(m+1)+'_cov'+str(cov)+'_'+clock_type+'.png')
@@ -361,10 +359,11 @@ Eg_healthy = [elt[1][1] for elt in Eg_x_x if elt[0]=='healthy']
 Eg_impaired = [elt[1][1] for elt in Eg_x_x if elt[0]=='impaired']
 
 ax.clear()
-ax.scatter(pvals_healthy,Eg_healthy,color='red',marker='o',s=200,alpha=0.5)
-ax.scatter(pvals_impaired,Eg_impaired,color='blue',marker='o',s=200,alpha=0.5)
+ax.scatter(pvals_healthy,Eg_healthy,color='red',marker='o',s=200,alpha=0.5,label='Healthy')
+ax.scatter(pvals_impaired,Eg_impaired,color='blue',marker='o',s=200,alpha=0.5,label='Impaired')
+ax.legend(loc='lower center',frameon=False)
 ax.set_xlabel('p',fontsize=20)
-ax.set_ylabel('Energy in linear prediction error (g[n])',fontsize=20)
+ax.set_ylabel(r'$\varepsilon_g/\varepsilon_x \times 10^3$',fontsize=20)
 ax.set_title('x[n] modeled using x[n]',fontsize=30)
 fig.savefig(path+'compare_healthy_impaired/compare_LPE_x_x_cov'+str(cov)+'_'+clock_type+'.png')
 
@@ -375,10 +374,11 @@ Eg_healthy = [elt[1][1] for elt in Eg_x_y if elt[0]=='healthy']
 Eg_impaired = [elt[1][1] for elt in Eg_x_y if elt[0]=='impaired']
 
 ax.clear()
-ax.scatter(pvals_healthy,Eg_healthy,color='red',marker='o',s=200,alpha=0.5)
-ax.scatter(pvals_impaired,Eg_impaired,color='blue',marker='o',s=200,alpha=0.5)
+ax.scatter(pvals_healthy,Eg_healthy,color='red',marker='o',s=200,alpha=0.5,label='Healthy')
+ax.scatter(pvals_impaired,Eg_impaired,color='blue',marker='o',s=200,alpha=0.5,label='Impaired')
+ax.legend(loc='lower center',frameon=False)
 ax.set_xlabel('p',fontsize=20)
-ax.set_ylabel('Energy in linear prediction error (g[n])',fontsize=20)
+ax.set_ylabel(r'$\varepsilon_g/\varepsilon_x \times 10^3$',fontsize=20)
 ax.set_title('x[n] modeled using y[n]',fontsize=30)
 fig.savefig(path+'compare_healthy_impaired/compare_LPE_x_y_cov'+str(cov)+'_'+clock_type+'.png')
 
@@ -389,10 +389,11 @@ Eg_healthy = [elt[1][1] for elt in Eg_y_x if elt[0]=='healthy']
 Eg_impaired = [elt[1][1] for elt in Eg_y_x if elt[0]=='impaired']
 
 ax.clear()
-ax.scatter(pvals_healthy,Eg_healthy,color='red',marker='o',s=200,alpha=0.5)
-ax.scatter(pvals_impaired,Eg_impaired,color='blue',marker='o',s=200,alpha=0.5)
+ax.scatter(pvals_healthy,Eg_healthy,color='red',marker='o',s=200,alpha=0.5,label='Healthy')
+ax.scatter(pvals_impaired,Eg_impaired,color='blue',marker='o',s=200,alpha=0.5,label='Impaired')
+ax.legend(loc='lower center',frameon=False)
 ax.set_xlabel('p',fontsize=20)
-ax.set_ylabel('Energy in linear prediction error (g[n])',fontsize=20)
+ax.set_ylabel(r'$\varepsilon_g/\varepsilon_y \times 10^3$',fontsize=20)
 ax.set_title('y[n] modeled using x[n]',fontsize=30)
 fig.savefig(path+'compare_healthy_impaired/compare_LPE_y_x_cov'+str(cov)+'_'+clock_type+'.png')
 
@@ -403,9 +404,10 @@ Eg_healthy = [elt[1][1] for elt in Eg_y_y if elt[0]=='healthy']
 Eg_impaired = [elt[1][1] for elt in Eg_y_y if elt[0]=='impaired']
 
 ax.clear()
-ax.scatter(pvals_healthy,Eg_healthy,color='red',marker='o',s=200,alpha=0.5)
-ax.scatter(pvals_impaired,Eg_impaired,color='blue',marker='o',s=200,alpha=0.5)
+ax.scatter(pvals_healthy,Eg_healthy,color='red',marker='o',s=200,alpha=0.5,label='Healthy')
+ax.scatter(pvals_impaired,Eg_impaired,color='blue',marker='o',s=200,alpha=0.5,label='Impaired')
+ax.legend(loc='lower center',frameon=False)
 ax.set_xlabel('p',fontsize=20)
-ax.set_ylabel('Energy in linear prediction error (g[n])',fontsize=20)
+ax.set_ylabel(r'$\varepsilon_g/\varepsilon_y \times 10^3$',fontsize=20)
 ax.set_title('y[n] modeled using y[n]',fontsize=30)
 fig.savefig(path+'compare_healthy_impaired/compare_LPE_y_y_cov'+str(cov)+'_'+clock_type+'.png')
