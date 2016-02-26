@@ -29,7 +29,7 @@ if not os.path.exists(path+'figs_raw'):
     os.makedirs(path+'figs_raw')
 
 # copy or command clock?
-clock_type = 'COMMAND'
+clock_type = 'COPY'
 
 # model order
 pvals = [2,3]
@@ -169,14 +169,13 @@ for fname in dirs:
         x_eqdist.append(x_interp[idx])
         y_eqdist.append(y_interp[idx])
 
-    # subtract mean values so there is no DC term adding an 'extra' pole
+    # subtract mean values so there is no DC term adding an extra pole
     x_eqdist = [elt-mean(x_eqdist) for elt in x_eqdist]
     y_eqdist = [elt-mean(y_eqdist) for elt in y_eqdist]
     
     # form all-pole model using Y-W eqns
     for p in pvals:
-        # circular autocorrelation
-        # or covariance
+        # covariance circular autocorrelation method
         rxx,ryy = [],[]
         x_periodic,y_periodic = np.concatenate((x_eqdist,x_eqdist)),np.concatenate((y_eqdist,y_eqdist))
         for w in range(p+1):
@@ -226,10 +225,10 @@ for fname in dirs:
                     lpe_x_y += x_periodic[w-d]*a_y[d]
                     lpe_y_x += x_periodic[w-d]*a_x[d]
                     lpe_y_y += y_periodic[w-d]*a_y[d]
-            g_x_x[w] = lpe_x_x if abs(lpe_x_x)>10**-15 else 0
-            g_x_y[w] = lpe_x_y if abs(lpe_x_y)>10**-15 else 0
-            g_y_x[w] = lpe_y_x if abs(lpe_y_x)>10**-15 else 0
-            g_y_y[w] = lpe_y_y if abs(lpe_y_y)>10**-15 else 0
+            g_x_x[w] = lpe_x_x
+            g_x_y[w] = lpe_x_y
+            g_y_x[w] = lpe_y_x
+            g_y_y[w] = lpe_y_y
         g_x_x,g_x_y,g_y_x,g_y_y = np.array(g_x_x),np.array(g_x_y),np.array(g_y_x),np.array(g_y_y)
         # total energy in linear prediction error,
         # normalized by total energy in original signal
@@ -335,7 +334,78 @@ for m in range(2):
     ak_x_impaired = [elt[1][1] for elt in ak_x_coeffs[m] if elt[0]=='impaired']
     
     ax.clear()
-    ax.scatter(pvals_x_healthy,ak_x_healthy,color='red',marker='o',s=15)
+    ax.scatter(pvals_x_healthy,ak_x_healthy,color='red',marker='o',s=200,alpha=0.5)
+    ax.scatter(pvals_x_impaired,ak_x_impaired,color='blue',marker='o',s=200,alpha=0.5)
     ax.set_xlabel('p',fontsize=20)
     ax.set_ylabel('a_'+str(m+1)+' (x)',fontsize=20)
     fig.savefig(path+'compare_healthy_impaired/compare_a'+str(m+1)+'_cov'+str(cov)+'_'+clock_type+'.png')
+    
+    pvals_y_healthy = [elt[1][0] for elt in ak_y_coeffs[m] if elt[0]=='healthy']
+    pvals_y_impaired = [elt[1][0] for elt in ak_y_coeffs[m] if elt[0]=='impaired']
+    
+    ak_y_healthy = [elt[1][1] for elt in ak_y_coeffs[m] if elt[0]=='healthy']
+    ak_y_impaired = [elt[1][1] for elt in ak_y_coeffs[m] if elt[0]=='impaired']
+    
+    ax.clear()
+    ax.scatter(pvals_y_healthy,ak_y_healthy,color='red',marker='o',s=200,alpha=0.5)
+    ax.scatter(pvals_y_impaired,ak_y_impaired,color='blue',marker='o',s=200,alpha=0.5)
+    ax.set_xlabel('p',fontsize=20)
+    ax.set_ylabel('a_'+str(m+1)+' (y)',fontsize=20)
+    fig.savefig(path+'compare_healthy_impaired/compare_a'+str(m+1)+'_cov'+str(cov)+'_'+clock_type+'.png')
+
+# energy in linear prediction error compared to energy of signal
+# modeling x[n] using x[n]
+pvals_healthy = [elt[1][0] for elt in Eg_x_x if elt[0]=='healthy']
+pvals_impaired = [elt[1][0] for elt in Eg_x_x if elt[0]=='impaired']
+Eg_healthy = [elt[1][1] for elt in Eg_x_x if elt[0]=='healthy']
+Eg_impaired = [elt[1][1] for elt in Eg_x_x if elt[0]=='impaired']
+
+ax.clear()
+ax.scatter(pvals_healthy,Eg_healthy,color='red',marker='o',s=200,alpha=0.5)
+ax.scatter(pvals_impaired,Eg_impaired,color='blue',marker='o',s=200,alpha=0.5)
+ax.set_xlabel('p',fontsize=20)
+ax.set_ylabel('Energy in linear prediction error (g[n])',fontsize=20)
+ax.set_title('x[n] modeled using x[n]',fontsize=30)
+fig.savefig(path+'compare_healthy_impaired/compare_LPE_x_x_cov'+str(cov)+'_'+clock_type+'.png')
+
+# modeling x[n] using y[n]
+pvals_healthy = [elt[1][0] for elt in Eg_x_y if elt[0]=='healthy']
+pvals_impaired = [elt[1][0] for elt in Eg_x_y if elt[0]=='impaired']
+Eg_healthy = [elt[1][1] for elt in Eg_x_y if elt[0]=='healthy']
+Eg_impaired = [elt[1][1] for elt in Eg_x_y if elt[0]=='impaired']
+
+ax.clear()
+ax.scatter(pvals_healthy,Eg_healthy,color='red',marker='o',s=200,alpha=0.5)
+ax.scatter(pvals_impaired,Eg_impaired,color='blue',marker='o',s=200,alpha=0.5)
+ax.set_xlabel('p',fontsize=20)
+ax.set_ylabel('Energy in linear prediction error (g[n])',fontsize=20)
+ax.set_title('x[n] modeled using y[n]',fontsize=30)
+fig.savefig(path+'compare_healthy_impaired/compare_LPE_x_y_cov'+str(cov)+'_'+clock_type+'.png')
+
+# modeling y[n] using x[n]
+pvals_healthy = [elt[1][0] for elt in Eg_y_x if elt[0]=='healthy']
+pvals_impaired = [elt[1][0] for elt in Eg_y_x if elt[0]=='impaired']
+Eg_healthy = [elt[1][1] for elt in Eg_y_x if elt[0]=='healthy']
+Eg_impaired = [elt[1][1] for elt in Eg_y_x if elt[0]=='impaired']
+
+ax.clear()
+ax.scatter(pvals_healthy,Eg_healthy,color='red',marker='o',s=200,alpha=0.5)
+ax.scatter(pvals_impaired,Eg_impaired,color='blue',marker='o',s=200,alpha=0.5)
+ax.set_xlabel('p',fontsize=20)
+ax.set_ylabel('Energy in linear prediction error (g[n])',fontsize=20)
+ax.set_title('y[n] modeled using x[n]',fontsize=30)
+fig.savefig(path+'compare_healthy_impaired/compare_LPE_y_x_cov'+str(cov)+'_'+clock_type+'.png')
+
+# modeling y[n] using y[n]
+pvals_healthy = [elt[1][0] for elt in Eg_y_y if elt[0]=='healthy']
+pvals_impaired = [elt[1][0] for elt in Eg_y_y if elt[0]=='impaired']
+Eg_healthy = [elt[1][1] for elt in Eg_y_y if elt[0]=='healthy']
+Eg_impaired = [elt[1][1] for elt in Eg_y_y if elt[0]=='impaired']
+
+ax.clear()
+ax.scatter(pvals_healthy,Eg_healthy,color='red',marker='o',s=200,alpha=0.5)
+ax.scatter(pvals_impaired,Eg_impaired,color='blue',marker='o',s=200,alpha=0.5)
+ax.set_xlabel('p',fontsize=20)
+ax.set_ylabel('Energy in linear prediction error (g[n])',fontsize=20)
+ax.set_title('y[n] modeled using y[n]',fontsize=30)
+fig.savefig(path+'compare_healthy_impaired/compare_LPE_y_y_cov'+str(cov)+'_'+clock_type+'.png')
