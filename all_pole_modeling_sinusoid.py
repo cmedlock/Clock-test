@@ -3,10 +3,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 pi = math.pi
-n = np.arange(100)
-omega = 2.*pi/100.
-x = np.cos(omega*n)+2
-y = np.sin(omega*n)+2
+n = np.arange(250)
+omega = 2.*pi/250.
+x = 63.5*np.cos(omega*n)+63.5
+y = 63.5*np.cos(omega*n)
 shift = 15
 noise = np.random.normal(loc=0,scale=0.01,size=len(n))
 x = np.concatenate((x[shift:],x[:shift]))#+noise
@@ -68,8 +68,8 @@ for w in range(len(x)+p):
         if w-d<len(x)+p:
             #if w<3:
                 #print '***   ',w-d,d,' ---> ',x_periodic[w-d],a_x[d]
-            lpe_x_x += x_periodic[w-d]*a_y[d]
-            lpe_y_y += y_periodic[w-d]*a_x[d]
+            lpe_x_x += x_periodic[w-d]*a_x[d]
+            lpe_y_y += y_periodic[w-d]*a_y[d]
     g_x_x[w] = lpe_x_x
     g_y_y[w] = lpe_y_y
 g_x_x,g_y_y = np.array(g_x_x),np.array(g_y_y)
@@ -87,6 +87,6 @@ ax2.plot(g_x_x[:len(x)],label='g_x[n]')
 ax2.plot(g_y_y[:len(y)],label='g_y[n]')
 ax2.legend(loc='best')
 #ax2.text(5,0.003,'p = '+str(p),fontsize=15)
-ax2.text(60,6*10**-10,'p = '+str(p),fontsize=15)
+#ax2.text(60,6*10**-10,'p = '+str(p),fontsize=15)
 
 plt.show()
