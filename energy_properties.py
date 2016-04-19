@@ -13,7 +13,7 @@ from pylab import *
 import clock_test as ct
 ct = reload(ct)
 
-path = '/Users/cmedlock/Documents/DSP_UROP/all_data/'
+path = '/Users/cmedlock/Documents/DSP_UROP/DataCatherine/'
 dirs = os.listdir(path)
 
 if not os.path.exists(path+'figs_raw'):
@@ -23,6 +23,7 @@ if not os.path.exists(path+'figs_raw'):
 clock_type = 'COPY'
 
 # save interesting quantities
+
 # fraction of energy contained in largest DFS coefficient
 Epeak_x,Epeak_y = [],[]
 
@@ -31,8 +32,11 @@ Epeak_x,Epeak_y = [],[]
 Estd_x,Estd_y = [],[]
 Ecentral_x,Ecentral_y = [],[]
 
+# estimation of eccentricity of ellipse
+eccentricity = []
+
 for fname in dirs:
-    if 'Scored' not in fname:
+    if 'CIN' not in fname and 'YDU' not in fname:
         continue
     print 'reading file ',fname,'...'
     
@@ -56,7 +60,7 @@ for fname in dirs:
     record,found_clock = False,False
     for w in range(len(data)):
         line = data[w]
-        # found lock?
+        # found copy clock?
         if found_clock==False:
             if clock_type in line:
                 found_clock = True
@@ -72,6 +76,9 @@ for fname in dirs:
                 break
             elif 'point' not in line:
                 continue
+        # done?
+        elif found_clock==False and record==False and len(x)>0:
+            break
         # other?
         else:
             continue
@@ -86,16 +93,78 @@ for fname in dirs:
         t.append(timestamp)
     
     f.close()
-
-    x,y,t = np.array(x),np.array(y),np.array(t)
-
-    # subtract mean values (zm = zero mean)
-    x_zm,y_zm = x-mean(x),y-mean(y)
     
+    if len(x)==0:
+        continue
+
+    # change x so that if the whole clock is drawn,
+    # it is oriented correctly
+    x = max(x)+10-x
+    
+    # normalize the size of the word such that all coordinates
+    # are linearly positioned between 0 and 127
+    x = 127*(x-min(x))/(max(x)-min(x))
+    y = 127*(y-min(y))/(max(y)-min(y))
+
+    # compensate for non-constant velocity
+    
+    N_orig = len(x)
+    N_new = 250
+
+    # calculate average distance between points
+    dists = []
+    for w in range(1,len(x)):
+        dx,dy = x[w]-x[w-1],y[w]-y[w-1]
+        dist = math.sqrt(dx**2+dy**2)
+        dists.append(dist)
+    dist_avg = mean(dists)
+    dist_total = sum(dists)
+    #print 'average distance between points is ',dist_avg_copy
+    #print 'total distance is ',sum(dists_copy)
+
+    # now want to get N_orig evenly-spaced points along the curve
+
+    # generate a much longer array with 199 linearly-interpolated 
+    # points between the actual data points
+    x_interp,y_interp = [],[]
+    for w in range(len(x)-1):
+        x_interp.append(x[w])
+        y_interp.append(y[w])
+        dx,dy = x[w+1]-x[w],y[w+1]-y[w]
+        dist = math.sqrt(dx**2+dy**2)
+        n_segments = ceil(dist/dist_avg)*200
+        for r in range(1,int(n_segments)):
+            x_new = x[w]+r*dx/n_segments
+            y_new = y[w]+r*dy/n_segments
+            x_interp.append(x_new)
+            y_interp.append(y_new)
+    x_interp.append(x[-1])
+    y_interp.append(y[-1])
+
+    # start from the first point and find the ones that are 
+    # approximately a distance dist_avg from each other
+    x_eqdist,y_eqdist = [x_interp[0]],[y_interp[0]]
+    idx = 0
+    for k in range(N_new):
+        dist_sofar = 0
+        for j in range(idx,len(x_interp)-1):
+            dx,dy = x_interp[j+1]-x_interp[j],y_interp[j+1]-y_interp[j]
+            dist_sofar += math.sqrt(dx**2+dy**2)
+            #if abs(dist_sofar-dist_avg)<dist_avg/100.:
+            if abs(dist_sofar-dist_total/250.)<dist_total/(250.*100.):
+                idx = j+1
+	        break
+        x_eqdist.append(x_interp[idx])
+        y_eqdist.append(y_interp[idx])
+
+    # subtract mean values so there is no DC term adding an extra pole
+    x_eqdist = [elt-mean(x_eqdist) for elt in x_eqdist]
+    y_eqdist = [elt-mean(y_eqdist) for elt in y_eqdist]
+
     # dft's
-    dft_size = len(x)
+    dft_size = len(x_eqdist)
     k = np.arange(dft_size)
-    dftx,dfty = np.fft.fft(x_zm,n=dft_size),np.fft.fft(y_zm,n=dft_size)
+    dftx,dfty = np.fft.fft(x_eqdist,n=dft_size),np.fft.fft(y_eqdist,n=dft_size)
     
     # k_near_pi is the smallest k value for which w_k = 2*pi*k/N is
     # greater than or equal to pi
@@ -111,9 +180,9 @@ for fname in dirs:
     dfty_centered = np.concatenate((dfty[k_near_pi:],dfty[:k_near_pi]))
     
     # percent energy in peak
-    Ex,Ey = np.abs(dftx_centered)**2,np.abs(dfty_centered)**2
+    Ex,Ey = np.abs(dftx)**2,np.abs(dfty)**2
     Ex_total,Ey_total = sum(Ex),sum(Ey)
-    Ex_peak,Ey_peak = 2*max(Ex)/Ex_total,2*max(Ey)/Ey_total
+    Ex_peak,Ey_peak = 2*Ex[1]/Ex_total,2*Ey[1]/Ey_total
     Epeak_x.append((ftype,Ex_peak))
     Epeak_y.append((ftype,Ey_peak))
 
@@ -135,24 +204,52 @@ for fname in dirs:
     Ecentral_x.append((ftype,Ex_central))
     Ecentral_y.append((ftype,Ey_central))
 
+    # plot circle in polar coordinates
+    # find COM
+    x_com = np.mean(x_eqdist)
+    y_com = np.mean(y_eqdist)
+
+    # get r and theta
+    r,theta = [],[]
+    for w in range(len(x_eqdist)):
+        dx,dy = x_eqdist[w]-x_com,y_eqdist[w]-y_com
+        dist = sqrt(dx**2+dy**2)
+        angle = math.atan2(dy,dx)
+        #if angle<0:
+            #angle = angle+2*pi
+        r.append(dist)
+        theta.append(angle)
+    r,theta = np.array(r),np.array(theta)
+    # estimate a,b of ellipse as avg values of 30 largest and 30 smallest r values
+    r_sorted = r
+    r_sorted.sort()
+    a_estimate = mean(r_sorted[-10:])
+    b_estimate = mean(r_sorted[:10])
+    e_estimate = math.sqrt(1-(b_estimate/a_estimate)**2)
+    eccentricity.append((ftype,e_estimate))
+
 # compare energy properties for the drawings of healthy vs. impaired patients
-ct.make_hist([elt[1] for elt in Epeak_x if elt[0]=='healthy'],
-             [elt[1] for elt in Epeak_x if elt[0]=='impaired'],
-             10,'Fraction of Energy in Largest DFS Coefficient','Epeak_x_'+clock_type,path)
-ct.make_hist([elt[1] for elt in Epeak_y if elt[0]=='healthy'],
-             [elt[1] for elt in Epeak_y if elt[0]=='impaired'],
-             10,'Fraction of Energy in Largest DFS Coefficient','Epeak_y_'+clock_type,path)
+#ct.make_hist([elt[1] for elt in Epeak_x if elt[0]=='healthy'],
+#             [elt[1] for elt in Epeak_x if elt[0]=='impaired'],
+#             10,'Fraction of Energy in Fundamental Freq. for x[n]','Epeak_x_'+clock_type,path)
+#ct.make_hist([elt[1] for elt in Epeak_y if elt[0]=='healthy'],
+#             [elt[1] for elt in Epeak_y if elt[0]=='impaired'],
+#             10,'Fraction of Energy in Fundamental Freq. for y[n]','Epeak_y_'+clock_type,path)
 
-ct.make_hist([elt[1] for elt in Estd_x if elt[0]=='healthy'],
-             [elt[1] for elt in Estd_x if elt[0]=='impaired'],
-             10,'Std. Deviation of Energy Distribution','Estd_x_'+clock_type,path)
-ct.make_hist([elt[1] for elt in Estd_y if elt[0]=='healthy'],
-             [elt[1] for elt in Estd_y if elt[0]=='impaired'],
-             10,'Std. Deviation of Energy Distribution','Estd_y_'+clock_type,path)
+ct.make_hist([elt[1] for elt in eccentricity if elt[0]=='healthy'],
+             [elt[1] for elt in eccentricity if elt[0]=='impaired'],
+             10,'Estimation of Ellipse Eccentricity','eccentricity_'+clock_type,path)
 
-ct.make_hist([elt[1] for elt in Ecentral_x if elt[0]=='healthy'],
-             [elt[1] for elt in Ecentral_x if elt[0]=='impaired'],
-             10,'Fraction of Energy w/in 1 Std.Dev. of w = 0','Ecentral_x_'+clock_type,path)
-ct.make_hist([elt[1] for elt in Ecentral_y if elt[0]=='healthy'],
-             [elt[1] for elt in Ecentral_y if elt[0]=='impaired'],
-             10,'Fraction of Energy w/in 1 Std.Dev. of w = 0','Ecentral_y_'+clock_type,path)
+#ct.make_hist([elt[1] for elt in Estd_x if elt[0]=='healthy'],
+#             [elt[1] for elt in Estd_x if elt[0]=='impaired'],
+#             10,'Std. Deviation of Energy Distribution','Estd_x_'+clock_type,path)
+#ct.make_hist([elt[1] for elt in Estd_y if elt[0]=='healthy'],
+#             [elt[1] for elt in Estd_y if elt[0]=='impaired'],
+#             10,'Std. Deviation of Energy Distribution','Estd_y_'+clock_type,path)
+#
+#ct.make_hist([elt[1] for elt in Ecentral_x if elt[0]=='healthy'],
+#             [elt[1] for elt in Ecentral_x if elt[0]=='impaired'],
+#             10,'Fraction of Energy w/in 1 Std.Dev. of w = 0','Ecentral_x_'+clock_type,path)
+#ct.make_hist([elt[1] for elt in Ecentral_y if elt[0]=='healthy'],
+#             [elt[1] for elt in Ecentral_y if elt[0]=='impaired'],
+#             10,'Fraction of Energy w/in 1 Std.Dev. of w = 0','Ecentral_y_'+clock_type,path)

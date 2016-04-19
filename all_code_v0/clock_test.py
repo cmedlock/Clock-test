@@ -320,18 +320,19 @@ def make_hist(healthy,impaired,nbins,nameforplot,nameforfile,path):
     #        name,fname,path: in order to save the figure
     # output: compare_name.png with histogram comparing healthy value to
     #         impaired values
-
+    
     fig_hist = plt.figure()
     hist = fig_hist.add_subplot(111)
-    n,bins,patches = hist.hist([healthy,impaired],nbins,range=[0,20],histtype='bar',label=['Healthy','Impaired'])
+    n,bins,patches = hist.hist([healthy,impaired],nbins,histtype='bar',label=['Healthy','Impaired'])
     n1,n2 = n[0],n[1]
+    #n1 = hist.hist(healthy,bins=binedges,histtype='bar',alpha=0.5,normed=True,label='Healthy')[0]
+    #n2 = hist.hist(impaired,bins=binedges,histtype='bar',alpha=0.5,normed=True,label='Impaired')[0]
     hist.set_ylim(top=max(max(n1),max(n2))*1.2)
     hist.legend(loc='best',frameon=False)
     
     # set titles and file labels
     title_fontsize = 15
-    #hist.set_title(nameforplot+': Healthy vs. Impaired',fontsize=title_fontsize)
-    #hist.set_title(nameforplot,fontsize=title_fontsize)
+    hist.set_title(nameforplot+': Healthy vs. Impaired',fontsize=title_fontsize)
 
     # set axis label
     x_axis_fontsize = 15

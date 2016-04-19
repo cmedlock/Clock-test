@@ -12,21 +12,29 @@ from pylab import *
 import clock_test as ct
 ct = reload(ct)
 
-path = '/Users/cmedlock/Documents/DSP_UROP/DataCatherine/'
+def sinc(omega_c,n,length_of_sinc):
+    if n==0:
+        return 1
+    elif abs(n)>(length_of_sinc-1)/2:
+        return 0
+    else:
+        return math.sin(omega_c*n)/(omega_c*n)
+
+path = '/Users/cmedlock/Documents/DSP_UROP/all_data/'
 dirs = os.listdir(path)
 
 pi = math.pi
 
 if not os.path.exists(path+'figs_raw'):
     os.makedirs(path+'figs_raw')
-if not os.path.exists(path+'norm_velocity'):
-    os.makedirs(path+'norm_velocity')
 
 # copy or command clock?
 clock_type = 'COMMAND'
 
 # model order
 pvals = [2,3]
+# covariance method?
+cov = False
 # save interesting quantities to compare between healthy and impaired patients
 # format is [[('healthy',ak_1 val),('healthy',ak_1 val),('impaired',ak_1 val),...]
 #            [ same thing for ak_2 ],...
@@ -38,8 +46,8 @@ for w in range(3):
     ak_x_coeffs.append([])
     ak_y_coeffs.append([])
 
-for fname in dirs[:5]:
-    if 'CIN' not in fname and 'YDU' not in fname:
+for fname in dirs:
+    if 'Scored' not in fname:
         continue
     print 'reading file ',fname,'...'
     
@@ -96,8 +104,15 @@ for fname in dirs[:5]:
         t.append(timestamp)
     
     f.close()
-    if len(x)==0:
-        continue
+
+    # change x so that if the whole clock is drawn,
+    # it is oriented correctly
+    x = max(x)+10-x
+    
+    # normalize the size of the word such that all coordinates
+    # are linearly positioned between 0 and 127
+    x = 127*(x-min(x))/(max(x)-min(x))
+    y = 127*(y-min(y))/(max(y)-min(y))
 
     # compensate for non-constant velocity
     
@@ -115,52 +130,44 @@ for fname in dirs[:5]:
     #print 'average distance between points is ',dist_avg_copy
     #print 'total distance is ',sum(dists_copy)
 
-    # if the points are already evenly-spaced, don't interpolate
-    if np.var(np.array(dists))<10**-12:
-        x_eqdist,y_eqdist = x,y
-    else:
-        # now want to get N_orig evenly-spaced points along the curve
+    # now want to get N_orig evenly-spaced points along the curve
 
-        # generate a much longer array with 199 linearly-interpolated 
-        # points between the actual data points
-        x_interp,y_interp = [],[]
-        for w in range(len(x)-1):
-            x_interp.append(x[w])
-            y_interp.append(y[w])
-            dx,dy = x[w+1]-x[w],y[w+1]-y[w]
-            dist = math.sqrt(dx**2+dy**2)
-            n_segments = ceil(dist/dist_avg)*200
-            for r in range(1,int(n_segments)):
-                x_new = x[w]+r*dx/n_segments
-                y_new = y[w]+r*dy/n_segments
-                x_interp.append(x_new)
-                y_interp.append(y_new)
-        x_interp.append(x[-1])
-        y_interp.append(y[-1])
+    # generate a much longer array with 199 linearly-interpolated 
+    # points between the actual data points
+    x_interp,y_interp = [],[]
+    for w in range(len(x)-1):
+        x_interp.append(x[w])
+        y_interp.append(y[w])
+        dx,dy = x[w+1]-x[w],y[w+1]-y[w]
+        dist = math.sqrt(dx**2+dy**2)
+        n_segments = ceil(dist/dist_avg)*200
+        for r in range(1,int(n_segments)):
+            x_new = x[w]+r*dx/n_segments
+            y_new = y[w]+r*dy/n_segments
+            x_interp.append(x_new)
+            y_interp.append(y_new)
+    x_interp.append(x[-1])
+    y_interp.append(y[-1])
 
-        # start from the first point and find the ones that are 
-        # approximately a distance dist_avg from each other
-        x_eqdist,y_eqdist = [x_interp[0]],[y_interp[0]]
-        idx = 0
-        for k in range(N_new-1):
-            dist_sofar = 0
-            for j in range(idx,len(x_interp)-1):
-                dx,dy = x_interp[j+1]-x_interp[j],y_interp[j+1]-y_interp[j]
-                dist_sofar += math.sqrt(dx**2+dy**2)
-                #if abs(dist_sofar-dist_avg)<dist_avg/100.:
-                if abs(dist_sofar-dist_total/250.)<dist_total/(250.*100.):
-                    idx = j+1
-	            break
-            x_eqdist.append(x_interp[idx])
-            y_eqdist.append(y_interp[idx])
-        fig.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/lpc_x_x_p'+str(p)+'_cov'+str(cov)+'_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
-
-    np.savetxt(path+'xy_eqdist_data/'+fname[:len(fname)-4]+'x_eqdist.txt',x_eqdist)
-    np.savetxt(path+'xy_eqdist_data/'+fname[:len(fname)-4]+'y_eqdist.txt',y_eqdist)
+    # start from the first point and find the ones that are 
+    # approximately a distance dist_avg from each other
+    x_eqdist,y_eqdist = [x_interp[0]],[y_interp[0]]
+    idx = 0
+    for k in range(N_new):
+        dist_sofar = 0
+        for j in range(idx,len(x_interp)-1):
+            dx,dy = x_interp[j+1]-x_interp[j],y_interp[j+1]-y_interp[j]
+            dist_sofar += math.sqrt(dx**2+dy**2)
+            #if abs(dist_sofar-dist_avg)<dist_avg/100.:
+            if abs(dist_sofar-dist_total/250.)<dist_total/(250.*100.):
+                idx = j+1
+	        break
+        x_eqdist.append(x_interp[idx])
+        y_eqdist.append(y_interp[idx])
 
     # subtract mean values so there is no DC term adding an extra pole
-    x_eqdist = np.array(x_eqdist)-mean(x_eqdist)
-    y_eqdist = np.array(y_eqdist)-mean(y_eqdist)
+    x_eqdist = [elt-mean(x_eqdist) for elt in x_eqdist]
+    y_eqdist = [elt-mean(y_eqdist) for elt in y_eqdist]
     
     # form all-pole model using Y-W eqns
     for p in pvals:
@@ -190,6 +197,7 @@ for fname in dirs[:5]:
         # LPC spectrum
         W_x_inv,W_y_inv = np.linalg.inv(W_x),np.linalg.inv(W_y)
         ak_x,ak_y = np.dot(W_x_inv,D_x),np.dot(W_y_inv,D_y)
+
         # impulse response of linear prediction filter
         a_x,a_y = [1],[1]
         for w in range(p):
@@ -220,10 +228,12 @@ for fname in dirs[:5]:
         g_x_x,g_x_y,g_y_x,g_y_y = np.array(g_x_x),np.array(g_x_y),np.array(g_y_x),np.array(g_y_y)
         # total energy in linear prediction error,
         # normalized by total energy in original signal
-        energy_x_x = sum(g_x_x[:-p]**2)/sum(np.array(x_eqdist)**2)*10**2
-        energy_x_y = sum(g_x_y[:-p]**2)/sum(np.array(x_eqdist)**2)*10**2
-        energy_y_x = sum(g_y_x[:-p]**2)/sum(np.array(y_eqdist)**2)*10**2
-        energy_y_y = sum(g_y_y[:-p]**2)/sum(np.array(y_eqdist)**2)*10**2
+        # multiply by 10**3 so that the numbers are
+        # readable
+        energy_x_x = sum(g_x_x[:-p]**2)/sum(np.array(x_eqdist)**2)*10**3
+        energy_x_y = sum(g_x_y[:-p]**2)/sum(np.array(x_eqdist)**2)*10**3
+        energy_y_x = sum(g_y_x[:-p]**2)/sum(np.array(y_eqdist)**2)*10**3
+        energy_y_y = sum(g_y_y[:-p]**2)/sum(np.array(y_eqdist)**2)*10**3
         # linear prediction of x[n] or y[n]
         xhat_x_x = -g_x_x[:-p]+x_eqdist
         xhat_x_y = -g_x_y[:-p]+x_eqdist
@@ -251,59 +261,59 @@ for fname in dirs[:5]:
         elif ftype=='impaired':
             fig.text(0.32, 0.955, 'IMPAIRED ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
         # predict x[n] with x[n] model
-        ax_lin.set_title('Linear Prediction of x[n]',fontsize=20)
+        ax_lin.set_title('Model x[n] using x[n]',fontsize=20)
         ax_lin.plot(x_eqdist,color='blue',lw=2,label=r'$x_{eqdist}[n]$')
         ax_lin.plot(xhat_x_x,'k-.',lw=3,label=r'$\hat{x}[n]$')
         ax_lin.legend(loc='best')
         ax_lpe.plot(g_x_x[:-p],color='red',lw=2,label='$g[n]$')
         ax_lpe.legend(loc='best')
-        ax_lpe.text(10,1.5,r'$E_g/E_{total} \times 10^2 = $'+str(np.round_(energy_x_x,3)),fontsize=15)
+        ax_lpe.text(10,1.5,r'$E_g/E_{total} \times 10^3 = $'+str(np.round_(energy_x_x,3)),fontsize=15)
         ax_lpe.text(10,2.3,'p = '+str(p),fontsize=15)
         ax_lin.set_ylim(bottom=-70,top=70)
         ax_lpe.set_ylim(bottom=-3,top=3)
         fig.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/lpc_x_x_p'+str(p)+'_cov'+str(cov)+'_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
-        ## predict x[n] with y[n] model
-        #ax_lin.clear()
-        #ax_lpe.clear()
-        #ax_lin.set_title('Model x[n] using y[n]',fontsize=20)
-        #ax_lin.plot(x_eqdist,color='blue',lw=2,label=r'$x_{eqdist}[n]$')
-        #ax_lin.plot(xhat_x_y,'k-.',lw=3,label=r'$\hat{x}[n]$')
-        #ax_lin.legend(loc='best')
-        #ax_lpe.plot(g_x_y[:-p],color='red',lw=2,label='$g[n]$')
-        #ax_lpe.legend(loc='best')
-        #ax_lpe.text(10,2.3,'p = '+str(p),fontsize=15)
-        #ax_lpe.text(10,1.5,r'$E_g/E_{total} \times 10^2 = $'+str(np.round_(energy_x_y,3)),fontsize=15)
-        #ax_lin.set_ylim(bottom=-70,top=70)
-        #ax_lpe.set_ylim(bottom=-3,top=3)
-        #fig.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/lpc_x_y_p'+str(p)+'_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
-        ## predict y[n] with x[n] model
-        #ax_lin.clear()
-        #ax_lpe.clear()
-        #ax_lin.set_title('Model y[n] using x[n]',fontsize=20)
-        #ax_lin.plot(y_eqdist,color='blue',lw=2,label=r'$y_{eqdist}[n]$')
-        #ax_lin.plot(yhat_y_x,'k-.',lw=3,label=r'$\hat{y}[n]$')
-        #ax_lin.legend(loc='best')
-        #ax_lpe.plot(g_y_x[:-p],color='red',lw=2,label='$g[n]$')
-        #ax_lpe.legend(loc='best')
-        #ax_lpe.text(10,2.3,'p = '+str(p),fontsize=15)
-        #ax_lpe.text(10,1.5,r'$E_g/E_{total} \times 10^2 = $'+str(np.round_(energy_y_x,3)),fontsize=15)
-        #ax_lin.set_ylim(bottom=-70,top=70)
-        #ax_lpe.set_ylim(bottom=-3,top=3)
-        #fig.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/lpc_y_x_p'+str(p)+'_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+        # predict x[n] with y[n] model
+        ax_lin.clear()
+        ax_lpe.clear()
+        ax_lin.set_title('Model x[n] using y[n]',fontsize=20)
+        ax_lin.plot(x_eqdist,color='blue',lw=2,label=r'$x_{eqdist}[n]$')
+        ax_lin.plot(xhat_x_y,'k-.',lw=3,label=r'$\hat{x}[n]$')
+        ax_lin.legend(loc='best')
+        ax_lpe.plot(g_x_y[:-p],color='red',lw=2,label='$g[n]$')
+        ax_lpe.legend(loc='best')
+        ax_lpe.text(10,2.3,'p = '+str(p),fontsize=15)
+        ax_lpe.text(10,1.5,r'$E_g/E_{total} \times 10^3 = $'+str(np.round_(energy_x_y,3)),fontsize=15)
+        ax_lin.set_ylim(bottom=-70,top=70)
+        ax_lpe.set_ylim(bottom=-3,top=3)
+        fig.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/lpc_x_y_p'+str(p)+'_cov'+str(cov)+'_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+        # predict y[n] with x[n] model
+        ax_lin.clear()
+        ax_lpe.clear()
+        ax_lin.set_title('Model y[n] using x[n]',fontsize=20)
+        ax_lin.plot(y_eqdist,color='blue',lw=2,label=r'$y_{eqdist}[n]$')
+        ax_lin.plot(yhat_y_x,'k-.',lw=3,label=r'$\hat{y}[n]$')
+        ax_lin.legend(loc='best')
+        ax_lpe.plot(g_y_x[:-p],color='red',lw=2,label='$g[n]$')
+        ax_lpe.legend(loc='best')
+        ax_lpe.text(10,2.3,'p = '+str(p),fontsize=15)
+        ax_lpe.text(10,1.5,r'$E_g/E_{total} \times 10^3 = $'+str(np.round_(energy_y_x,3)),fontsize=15)
+        ax_lin.set_ylim(bottom=-70,top=70)
+        ax_lpe.set_ylim(bottom=-3,top=3)
+        fig.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/lpc_y_x_p'+str(p)+'_cov'+str(cov)+'_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
         # predict y[n] with y[n] model
         ax_lin.clear()
         ax_lpe.clear()
-        ax_lin.set_title('Linear Prediction of y[n]',fontsize=20)
+        ax_lin.set_title('Model y[n] using y[n]',fontsize=20)
         ax_lin.plot(y_eqdist,color='blue',lw=2,label=r'$y_{eqdist}[n]$')
         ax_lin.plot(yhat_y_y,'k-.',lw=3,label=r'$\hat{y}[n]$')
         ax_lin.legend(loc='best')
         ax_lpe.plot(g_y_y[:-p],color='red',lw=2,label='$g[n]$')
         ax_lpe.legend(loc='best')
         ax_lpe.text(10,2.3,'p = '+str(p),fontsize=15)
-        ax_lpe.text(10,1.5,r'$E_g/E_{total} \times 10^2 = $'+str(np.round_(energy_y_y,3)),fontsize=15)
+        ax_lpe.text(10,1.5,r'$E_g/E_{total} \times 10^3 = $'+str(np.round_(energy_y_y,3)),fontsize=15)
         ax_lin.set_ylim(bottom=-70,top=70)
         ax_lpe.set_ylim(bottom=-3,top=3)
-        fig.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/lpc_y_y_p'+str(p)+'_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+        fig.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/lpc_y_y_p'+str(p)+'_cov'+str(cov)+'_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
 
 # compare linear prediction coefficients and total
 # energy in linear prediction error between the drawings of healthy
@@ -325,7 +335,7 @@ for m in range(2):
     ax.legend(loc='lower center',frameon=False)
     ax.set_xlabel('p',fontsize=20)
     ax.set_ylabel('a_'+str(m+1)+' (x)',fontsize=20)
-    fig.savefig(path+'compare_healthy_impaired/compare_a'+str(m+1)+'_x_cov'+str(cov)+'_'+clock_type+'.png')
+    fig.savefig(path+'compare_healthy_impaired/compare_a'+str(m+1)+'_cov'+str(cov)+'_'+clock_type+'.png')
     
     pvals_y_healthy = [elt[1][0] for elt in ak_y_coeffs[m] if elt[0]=='healthy']
     pvals_y_impaired = [elt[1][0] for elt in ak_y_coeffs[m] if elt[0]=='impaired']
@@ -339,7 +349,7 @@ for m in range(2):
     ax.legend(loc='lower center',frameon=False)
     ax.set_xlabel('p',fontsize=20)
     ax.set_ylabel('a_'+str(m+1)+' (y)',fontsize=20)
-    fig.savefig(path+'compare_healthy_impaired/compare_a'+str(m+1)+'_y_cov'+str(cov)+'_'+clock_type+'.png')
+    fig.savefig(path+'compare_healthy_impaired/compare_a'+str(m+1)+'_cov'+str(cov)+'_'+clock_type+'.png')
 
 # energy in linear prediction error compared to energy of signal
 # modeling x[n] using x[n]

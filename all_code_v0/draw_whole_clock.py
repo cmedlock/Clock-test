@@ -10,46 +10,36 @@ import os
 from pylab import *
 
 # path to data
-path = '/Users/cmedlock/Documents/DSP_UROP/DataCatherine/'
+path = '/Users/cmedlock/Documents/DSP_UROP/all_data/'
 dirs = os.listdir(path)
 
 # path to output
 if not os.path.exists(path+'figs_raw'):
     os.makedirs(path+'figs_raw')
 
-# copy or command clock?
-clock_type = 'COMMAND'
-
 # make figs
 for fname in dirs[:2]:
-    if 'CIN' not in fname and 'YDU' not in fname:
+    if 'Scored' not in fname and 'aiko' not in fname:
         continue
     print 'reading file ',fname,'...'
-    
-    ftype = ''
-    if 'YDU' in fname:
-        ftype = 'healthy'
-    elif 'CIN' in fname:
-        ftype = 'impaired'
-    else:
-        print 'not a valid file name'
-
     f = open(path+fname)
     data = f.readlines()
 
     if not os.path.exists(path+'figs_raw/'+fname[:len(fname)-4]):
         os.makedirs(path+'figs_raw/'+fname[:len(fname)-4])
 
+    # copy or command clock?
+    clock_type = 'COPY'
     x,y,t = [],[],[]
+    x_temp,y_temp,t_temp = [],[],[]
 
     # read in data
-    record,found_clock = False,False
+    record,found_clock,is_noise = False,False,False
     for w in range(len(data)):
         line = data[w]
-        # found copy clock?
-        if found_clock==False:
-            if clock_type in line:
-                found_clock = True
+        # found pen stroke?
+        if found_clock==False and clock_type in line:
+            found_clock = True
             continue
         # start recording?
         elif found_clock==True and 'CLOCKFACE' in line:
@@ -57,14 +47,29 @@ for fname in dirs[:2]:
             continue
         # stop recording?
         elif record==True:
-            if 'symbol label' in line and len(x)>0:
-                record = False
+            if 'RawData' in line and len(x)>0:
                 break
+            if 'symbol label' in line and len(x_temp)==0 and 'NOISE' in line:
+                is_noise = True
+            if 'symbol label' in line and len(x_temp)>0: # length requirement since sometimes there are empty symbols
+                #print 'is_noise is now ',is_noise
+                #print 'len(t_temp) is now ',len(t_temp)
+                #print 'next symbol is ',line
+                # store previous symbol and reset lists for the next one
+                if is_noise==False:
+                    #print 'storing previous symbol from ',t_temp[0],' to ',t_temp[-1],' (',(t_temp[0]-1307115563146.0)/10.,' to ',(t_temp[-1]-1307115563146.0)/10.,')'
+                    x.append(x_temp)
+                    y.append(y_temp)
+                    t.append(t_temp)
+                elif is_noise==True:
+                    is_noise = False
+                #print 'len(t) is now ',len(t)
+                x_temp,y_temp,t_temp = [],[],[]
+                if 'NOISE' in line:
+                    is_noise = True
+                continue
             elif 'point' not in line:
                 continue
-        # done?
-        elif found_clock==False and record==False and len(x)>0:
-            break
         # other?
         else:
             continue
@@ -74,23 +79,28 @@ for fname in dirs[:2]:
         xcoord = double(line[3])
         ycoord = double(line[1])
         timestamp = double(line[7])
-        x.append(xcoord)
-        y.append(ycoord)
-        t.append(timestamp)
+        x_temp.append(xcoord)
+        y_temp.append(ycoord)
+        t_temp.append(timestamp)
     
     f.close()
 
-    if len(x)==0:
-        continue
-
     # change x so that if the whole clock is drawn,
     # it is oriented correctly
-    x = max(x)+10-x
-    
-    # normalize the size of the word such that all coordinates
+    xmax = max([max(elt) for elt in x])
+    for w in range(len(x)):
+        x[w] = [xmax+10-elt for elt in x[w]]
+    xmax = max([max(elt) for elt in x])
+    xmin = min([min(elt) for elt in x])
+    ymax = max([max(elt) for elt in y])
+    ymin = min([min(elt) for elt in y])
+    tmin = min([min(elt) for elt in t])
+    # also normalize the size of the word such that all coordinates
     # are linearly positioned between 0 and 127
-    x = 127*(x-min(x))/(max(x)-min(x))
-    y = 127*(y-min(y))/(max(y)-min(y))
+    for w in range(len(x)):
+        x[w] = [127*(elt-xmin)/(xmax-xmin) for elt in x[w]]
+        y[w] = [127*(elt-ymin)/(ymax-ymin) for elt in y[w]]
+        t[w] = [(elt-tmin)/10. for elt in t[w]] # the time array should have reasonable values
 
     # order the strokes chronologically
     symbol_start_times = [elt[0] for elt in t]

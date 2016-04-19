@@ -11,14 +11,14 @@ from pylab import *
 import clock_test as ct
 ct = reload(ct)
 
-path = '/Users/cmedlock/Documents/DSP_UROP/DataCatherine/'
+path = '/Users/cmedlock/Documents/DSP_UROP/all_data/'
 dirs = os.listdir(path)
 
 if not os.path.exists(path+'figs_raw'):
     os.makedirs(path+'figs_raw')
 
 for fname in dirs:
-    if 'CIN' not in fname and 'YDU' not in fname:
+    if 'Scored' not in fname:
         continue
     print 'reading file ',fname,'...'
     
@@ -77,78 +77,17 @@ for fname in dirs:
         t.append(timestamp)
     
     f.close()
-    if len(x)==0:
-        continue
-        
-    # change x so that if the whole clock is drawn,
-    # it is oriented correctly
-    x = max(x)+10-x
-    
-    # normalize the size of the word such that all coordinates
-    # are linearly positioned between 0 and 127
-    x = 127*(x-min(x))/(max(x)-min(x))
-    y = 127*(y-min(y))/(max(y)-min(y))
 
-    # compensate for non-constant velocity
-    
-    N_orig = len(x)
-    N_new = 250
+    x,y,t = np.array(x),np.array(y),np.array(t)
 
-    # calculate average distance between points
-    dists = []
-    for w in range(1,len(x)):
-        dx,dy = x[w]-x[w-1],y[w]-y[w-1]
-        dist = math.sqrt(dx**2+dy**2)
-        dists.append(dist)
-    dist_avg = mean(dists)
-    dist_total = sum(dists)
-    #print 'average distance between points is ',dist_avg_copy
-    #print 'total distance is ',sum(dists_copy)
-
-    # now want to get N_orig evenly-spaced points along the curve
-
-    # generate a much longer array with 199 linearly-interpolated 
-    # points between the actual data points
-    x_interp,y_interp = [],[]
-    for w in range(len(x)-1):
-        x_interp.append(x[w])
-        y_interp.append(y[w])
-        dx,dy = x[w+1]-x[w],y[w+1]-y[w]
-        dist = math.sqrt(dx**2+dy**2)
-        n_segments = ceil(dist/dist_avg)*200
-        for r in range(1,int(n_segments)):
-            x_new = x[w]+r*dx/n_segments
-            y_new = y[w]+r*dy/n_segments
-            x_interp.append(x_new)
-            y_interp.append(y_new)
-    x_interp.append(x[-1])
-    y_interp.append(y[-1])
-
-    # start from the first point and find the ones that are 
-    # approximately a distance dist_avg from each other
-    x_eqdist,y_eqdist = [x_interp[0]],[y_interp[0]]
-    idx = 0
-    for k in range(N_new):
-        dist_sofar = 0
-        for j in range(idx,len(x_interp)-1):
-            dx,dy = x_interp[j+1]-x_interp[j],y_interp[j+1]-y_interp[j]
-            dist_sofar += math.sqrt(dx**2+dy**2)
-            #if abs(dist_sofar-dist_avg)<dist_avg/100.:
-            if abs(dist_sofar-dist_total/250.)<dist_total/(250.*100.):
-                idx = j+1
-	        break
-        x_eqdist.append(x_interp[idx])
-        y_eqdist.append(y_interp[idx])
-
-    # subtract mean values so there is no DC term adding an extra pole
-    x_eqdist = [elt-mean(x_eqdist) for elt in x_eqdist]
-    y_eqdist = [elt-mean(y_eqdist) for elt in y_eqdist]
+    # subtract mean values (zm = zero mean)
+    x_zm,y_zm = x-mean(x),y-mean(y)
     
     # DFS coefficients
-    dft_size = len(x_eqdist)
-    dftx,dfty = np.fft.fft(x_eqdist,n=dft_size),np.fft.fft(y_eqdist,n=dft_size)
+    dft_size = len(x)
+    dftx,dfty = np.fft.fft(x_zm,n=dft_size),np.fft.fft(y_zm,n=dft_size)
     k = np.arange(dft_size)
-
+    
     # k_near_pi is the k value for which w_k = 2*pi*k/N is closest to,
     # but not larger than, pi
     k_near_pi = 0
@@ -163,12 +102,15 @@ for fname in dirs:
     #freq = 2*np.pi/dft_size*k
     #freq = np.fft.fftfreq(n=1024,d=1/(2*np.pi)) # NB: centered around 0
     
-    # plot
+    # copy clocks
     fig_xt,fig_yt = plt.figure(),plt.figure()
     fig_xt.subplots_adjust(hspace=0.3)
     fig_yt.subplots_adjust(hspace=0.3)
+    xt,yt = fig_xt.add_subplot(211),fig_yt.add_subplot(211)
+    xt.plot(t-t[0],x)
+    yt.plot(t-t[0],y)
     
-    dftxk,dftyk = fig_xt.add_subplot(211),fig_yt.add_subplot(211)    
+    dftxk,dftyk = fig_xt.add_subplot(212),fig_yt.add_subplot(212)    
     linecolor_dft = 'red'
     dftxk.plot(posfreq,np.abs(dftx_posfreq),linecolor_dft)
     dftyk.plot(posfreq,np.abs(dfty_posfreq),linecolor_dft)
@@ -177,19 +119,11 @@ for fname in dirs:
     dftxk.set_yscale('log')
     dftyk.set_yscale('log')
 
-    dftxk_zoom,dftyk_zoom = fig_xt.add_subplot(212),fig_yt.add_subplot(212)
-    dftxk_zoom.stem(posfreq[:10],np.abs(dftx_posfreq[:10]),linecolor_dft,markerfmt='ro')
-    dftyk_zoom.stem(posfreq[:10],np.abs(dfty_posfreq[:10]),linecolor_dft,markerfmt='ro')
-    dftxk_zoom.set_ylim(bottom=min(np.abs(dftx_posfreq[1:10]))/10,top=max(np.abs(dftx))*10)
-    dftyk_zoom.set_ylim(bottom=min(np.abs(dfty_posfreq[1:10]))/10,top=max(np.abs(dfty))*10)
-    dftxk_zoom.set_yscale('log')
-    dftyk_zoom.set_yscale('log')
-    
     # set axis limits
+    xt.set_xlim(right=max(t-t[0]))
+    yt.set_xlim(right=max(t-t[0]))
     dftxk.set_xlim(right=posfreq[-1])
     dftyk.set_xlim(right=posfreq[-1])
-    dftxk_zoom.set_xlim(left=0,right=posfreq[10])
-    dftyk_zoom.set_xlim(left=0,right=posfreq[10])
     
     # set titles and file labels
     title_fontsize = 20
@@ -211,33 +145,25 @@ for fname in dirs:
         
     # set axis labels
     x_axis_fontsize = 20
-    #xt.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
-    #yt.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
+    xt.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
+    yt.set_xlabel('time [ms]',fontsize=x_axis_fontsize)
     dftxk.set_xlabel(r'$k$',fontsize=x_axis_fontsize)
     dftyk.set_xlabel(r'$k$',fontsize=x_axis_fontsize)
-    dftxk_zoom.set_xlabel(r'$k$',fontsize=x_axis_fontsize)
-    dftyk_zoom.set_xlabel(r'$k$',fontsize=x_axis_fontsize)
 
     y_axis_fontsize = 25
     linecolor_xy = 'blue'
-    #xt.set_ylabel(r'$x$',color=linecolor_xy,fontsize=y_axis_fontsize)
-    #yt.set_ylabel(r'$y$',color=linecolor_xy,fontsize=y_axis_fontsize)
-    #for x1 in xt.get_yticklabels():
-    #    x1.set_color(linecolor_xy)
-    #for y1 in yt.get_yticklabels():
-    #    y1.set_color(linecolor_xy)
+    xt.set_ylabel(r'$x$',color=linecolor_xy,fontsize=y_axis_fontsize)
+    yt.set_ylabel(r'$y$',color=linecolor_xy,fontsize=y_axis_fontsize)
+    for x1 in xt.get_yticklabels():
+        x1.set_color(linecolor_xy)
+    for y1 in yt.get_yticklabels():
+        y1.set_color(linecolor_xy)
         
     dftxk.set_ylabel(r'$|X[k]|$',color=linecolor_dft,fontsize=y_axis_fontsize)
     dftyk.set_ylabel(r'$|Y[k]|$',color=linecolor_dft,fontsize=y_axis_fontsize)
     for v1 in dftxk.get_yticklabels():
         v1.set_color(linecolor_dft)
     for v2 in dftyk.get_yticklabels():
-        v2.set_color(linecolor_dft)
-    dftxk_zoom.set_ylabel(r'$|X[k]|$',color=linecolor_dft,fontsize=y_axis_fontsize)
-    dftyk_zoom.set_ylabel(r'$|Y[k]|$',color=linecolor_dft,fontsize=y_axis_fontsize)
-    for v1 in dftxk_zoom.get_yticklabels():
-        v1.set_color(linecolor_dft)
-    for v2 in dftyk_zoom.get_yticklabels():
         v2.set_color(linecolor_dft)
     
     # save figures
