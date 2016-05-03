@@ -91,63 +91,63 @@ for fname in dirs:
         print fname
         continue
 
-#    # compensate for non-constant velocity
-#    
-#    N_orig = len(x)
-#    N_new = N_orig
-#
-#    # calculate average distance between points
-#    dists = []
-#    for w in range(1,len(x)):
-#        dx,dy = x[w]-x[w-1],y[w]-y[w-1]
-#        dist = math.sqrt(dx**2+dy**2)
-#        dists.append(dist)
-#    dist_avg = mean(dists)
-#    dist_total = sum(dists)
-#    #print 'average distance between points is ',dist_avg_copy
-#    #print 'total distance is ',sum(dists_copy)
-#
-#    # if the points are already evenly-spaced, don't interpolate
-#    if np.var(np.array(dists))<10**-12:
-#        x_eqdist,y_eqdist = x,y
-#    else:
-#        # now want to get N_orig evenly-spaced points along the curve
-#
-#        # generate a much longer array with 199 linearly-interpolated 
-#        # points between the actual data points
-#        x_interp,y_interp = [],[]
-#        for w in range(len(x)-1):
-#            x_interp.append(x[w])
-#            y_interp.append(y[w])
-#            dx,dy = x[w+1]-x[w],y[w+1]-y[w]
-#            dist = math.sqrt(dx**2+dy**2)
-#            n_segments = ceil(dist/dist_avg)*200
-#            for r in range(1,int(n_segments)):
-#                x_new = x[w]+r*dx/n_segments
-#                y_new = y[w]+r*dy/n_segments
-#                x_interp.append(x_new)
-#                y_interp.append(y_new)
-#        x_interp.append(x[-1])
-#        y_interp.append(y[-1])
-#
-#        # start from the first point and find the ones that are 
-#        # approximately a distance dist_avg from each other
-#        x_eqdist,y_eqdist = [x_interp[0]],[y_interp[0]]
-#        idx = 0
-#        for k in range(N_new-1):
-#            dist_sofar = 0
-#            for j in range(idx,len(x_interp)-1):
-#                dx,dy = x_interp[j+1]-x_interp[j],y_interp[j+1]-y_interp[j]
-#                dist_sofar += math.sqrt(dx**2+dy**2)
-#                if abs(dist_sofar-dist_total/float(N_new))<dist_total/(float(N_new)*100.):
-#                    idx = j+1
-#	            break
-#            x_eqdist.append(x_interp[idx])
-#            y_eqdist.append(y_interp[idx])
-#        
-#        # subtract mean values so there is no DC term
-#        x_eqdist = [elt-mean(x_eqdist) for elt in x_eqdist]
-#        y_eqdist = [elt-mean(y_eqdist) for elt in y_eqdist]
-#
-#    np.savetxt(path+'norm_velocity_data/'+fname[:len(fname)-4]+'_x_eqdist_'+clock_type.lower()+'.txt',x_eqdist)
-#    np.savetxt(path+'norm_velocity_data/'+fname[:len(fname)-4]+'_y_eqdist_'+clock_type.lower()+'.txt',y_eqdist)
+    # compensate for non-constant velocity
+    
+    N_orig = len(x)
+    N_new = N_orig
+
+    # calculate average distance between points
+    dists = []
+    for w in range(1,len(x)):
+        dx,dy = x[w]-x[w-1],y[w]-y[w-1]
+        dist = math.sqrt(dx**2+dy**2)
+        dists.append(dist)
+    dist_avg = mean(dists)
+    dist_total = sum(dists)
+    #print 'average distance between points is ',dist_avg_copy
+    #print 'total distance is ',sum(dists_copy)
+
+    # if the points are already evenly-spaced, don't interpolate
+    if np.var(np.array(dists))<10**-12:
+        x_eqdist,y_eqdist = x,y
+    else:
+        # now want to get N_orig evenly-spaced points along the curve
+
+        # generate a much longer array with 199 linearly-interpolated 
+        # points between the actual data points
+        x_interp,y_interp = [],[]
+        for w in range(len(x)-1):
+            x_interp.append(x[w])
+            y_interp.append(y[w])
+            dx,dy = x[w+1]-x[w],y[w+1]-y[w]
+            dist = math.sqrt(dx**2+dy**2)
+            n_segments = ceil(dist/dist_avg)*200
+            for r in range(1,int(n_segments)):
+                x_new = x[w]+r*dx/n_segments
+                y_new = y[w]+r*dy/n_segments
+                x_interp.append(x_new)
+                y_interp.append(y_new)
+        x_interp.append(x[-1])
+        y_interp.append(y[-1])
+
+        # start from the first point and find the ones that are 
+        # approximately a distance dist_avg from each other
+        x_eqdist,y_eqdist = [x_interp[0]],[y_interp[0]]
+        idx = 0
+        for k in range(N_new-1):
+            dist_sofar = 0
+            for j in range(idx,len(x_interp)-1):
+                dx,dy = x_interp[j+1]-x_interp[j],y_interp[j+1]-y_interp[j]
+                dist_sofar += math.sqrt(dx**2+dy**2)
+                if abs(dist_sofar-dist_total/float(N_new))<dist_total/(float(N_new)*100.):
+                    idx = j+1
+	            break
+            x_eqdist.append(x_interp[idx])
+            y_eqdist.append(y_interp[idx])
+        
+        # subtract mean values so there is no DC term
+        x_eqdist = [elt-mean(x_eqdist) for elt in x_eqdist]
+        y_eqdist = [elt-mean(y_eqdist) for elt in y_eqdist]
+
+    np.savetxt(path+'norm_velocity_data/'+fname[:len(fname)-4]+'_x_eqdist_'+clock_type.lower()+'.txt',x_eqdist)
+    np.savetxt(path+'norm_velocity_data/'+fname[:len(fname)-4]+'_y_eqdist_'+clock_type.lower()+'.txt',y_eqdist)
