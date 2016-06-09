@@ -10,7 +10,7 @@ from pylab import *
 import clock_test as ct
 ct = reload(ct)
 
-path = '/Users/cmedlock/Documents/DSP_UROP/all_data/'
+path = '/Users/cmedlock/Documents/DSP_UROP/data_for_report/'
 dirs = os.listdir(path)
 
 pi = math.pi
@@ -72,20 +72,35 @@ for fname in dirs:
 
     # set axis limits
     rtheta.set_xlim(left=-3.2,right=3.2)
+    rtheta.set_ylim(top=43)
 
     # set axis labels
     rtheta.set_xlabel(r'$\theta$',fontsize=x_axis_fontsize)
     rtheta.set_ylabel(r'$r$',fontsize=y_axis_fontsize)
 
-    # add drawing type (healthy or impaired) and file name
-    fig_rtheta.text(0.99, 0.96,fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
+    # format axis ticks
+    j = 1
+    for v1 in rtheta.get_yticklabels():
+        v1.set_fontsize(21)
+        if j%2==0:
+            v1.set_visible(False)
+        j += 1
+    j = 1
+    for v1 in rtheta.get_xticklabels():
+        v1.set_fontsize(21)
+        if j%2==0:
+            v1.set_visible(False)
+        j += 1
 
-    if 'YDU' in fname:
-        fig_rtheta.text(0.32, 0.955, 'HEALTHY ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
-    elif 'CIN' in fname:
-        fig_rtheta.text(0.32, 0.955, 'IMPAIRED ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
-    else:
-        print 'not a valid filename'
+#    # add drawing type (healthy or impaired) and file name
+#    fig_rtheta.text(0.99, 0.96,fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
+#
+#    if 'YDU' in fname:
+#        fig_rtheta.text(0.32, 0.955, 'HEALTHY ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+#    elif 'CIN' in fname:
+#        fig_rtheta.text(0.32, 0.955, 'IMPAIRED ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+#    else:
+#        print 'not a valid filename'
 
     # save figure
     fig_rtheta.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/xy_polar_'+clock_type+'_'+fname[:len(fname)-4]+'.png')

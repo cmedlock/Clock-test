@@ -26,7 +26,7 @@ if not os.path.exists(path+'figs_raw'):
 # copy or command clock?
 clock_type = 'COMMAND'
 
-for fname in dirs:
+for fname in dirs[:5]:
     if 'CIN' not in fname and 'YDU' not in fname:
         continue
     #print 'reading file ',fname,'...'
@@ -151,3 +151,47 @@ for fname in dirs:
 
     np.savetxt(path+'norm_velocity_data/'+fname[:len(fname)-4]+'_x_eqdist_'+clock_type.lower()+'.txt',x_eqdist)
     np.savetxt(path+'norm_velocity_data/'+fname[:len(fname)-4]+'_y_eqdist_'+clock_type.lower()+'.txt',y_eqdist)
+
+    # plot for UROP report
+    plt.close('all')
+    fig_xy = plt.figure()
+    xy = fig_xy.add_subplot(111)
+    x = [elt-mean(x) for elt in x]
+    y = [elt-mean(y) for elt in y]
+    xy.plot(x,y,lw=2)
+    xy.set_xlim(left=min(x)-5,right=max(x)+5)
+    xy.set_ylim(bottom=min(y)-5,top=max(y)+5)
+    
+    frame = plt.gca()
+    frame.axes.get_xaxis().set_ticklabels([])
+    frame.axes.get_yaxis().set_ticklabels([])
+    
+    # set axis labels
+    xy.set_xlabel(r'$x$',fontsize=20)
+    xy.set_ylabel(r'$y$',fontsize=20)
+
+    # add drawing type (healthy or impaired)
+    if 'YDU' in fname:
+        fig_xy.text(0.32, 0.955, 'HEALTHY ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+    elif 'CIN' in fname:
+        fig_xy.text(0.32, 0.955, 'IMPAIRED ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
+    else:
+        print 'not a valid filename'
+
+    # save figure
+    fig_xy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/xy_raw_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+    
+    xy.clear()
+    xy.plot(x_eqdist,y_eqdist,lw=2)
+    xy.set_xlim(left=min(x_eqdist)-5,right=max(x_eqdist)+5)
+    xy.set_ylim(bottom=min(y_eqdist)-5,top=max(y_eqdist)+5)
+    
+    frame.axes.get_xaxis().set_ticklabels([])
+    frame.axes.get_yaxis().set_ticklabels([])
+
+    # set axis labels
+    xy.set_xlabel(r'$x$',fontsize=20)
+    xy.set_ylabel(r'$y$',fontsize=20)
+
+    # save figure
+    fig_xy.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/xy_'+clock_type+'_'+fname[:len(fname)-4]+'.png')

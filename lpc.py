@@ -11,7 +11,7 @@ from pylab import *
 import clock_test as ct
 ct = reload(ct)
 
-path = '/Users/cmedlock/Documents/DSP_UROP/all_data/'
+path = '/Users/cmedlock/Documents/DSP_UROP/data_for_report/'
 dirs = os.listdir(path)
 
 pi = math.pi
@@ -45,7 +45,7 @@ for w in range(p):
 for fname in dirs:
     if 'CIN' not in fname and 'YDU' not in fname:
         continue
-    #print 'reading file ',fname,'...'
+    print 'reading file ',fname,'...'
     
     ftype = ''
     if 'YDU' in fname:
@@ -98,41 +98,97 @@ for fname in dirs:
     # store the coefficients for comparison between the drawings of healthy
     # and impaired patients
     for m in range(p):
-        ak_x_coeffs[m].append((ftype,(p,ak_x[m])))
-        ak_y_coeffs[m].append((ftype,(p,ak_y[m])))
+        ak_x_coeffs[m].append((ftype,ak_x[m]))
+        ak_y_coeffs[m].append((ftype,ak_y[m]))
     Eg_x.append((ftype,energy_x))
     Eg_y.append((ftype,energy_y))
 
-    ## plot
-    #plt.close('all')
-    #np.set_printoptions(precision=2)
-    #fig = plt.figure()
-    #ax_lin,ax_lpe = fig.add_subplot(211),fig.add_subplot(212)
+    # plot
+    plt.close('all')
+    np.set_printoptions(precision=2)
+    fig = plt.figure()
+    ax_lin,ax_lpe = fig.add_subplot(211),fig.add_subplot(212)
     #fig.text(0.99, 0.96,fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
     #if ftype=='healthy':
     #    fig.text(0.32, 0.955, 'HEALTHY ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
     #elif ftype=='impaired':
     #    fig.text(0.32, 0.955, 'IMPAIRED ('+clock_type+')',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
-    ## predict x[n]
+    # predict x[n]
     #ax_lin.set_title('Linear Prediction of x[n]',fontsize=20)
-    #ax_lin.plot(x_eqdist,color='blue',lw=2,label=r'$x_{eqdist}[n]$')
-    #ax_lin.plot(x_hat,'k-.',lw=3,label=r'$\hat{x}[n]$')
+    ax_lin.plot(x_eqdist,color='blue',lw=2,label=r'$x_{eqdist}[n]$')
+    ax_lin.plot(x_hat,'k-.',lw=3,label=r'$\hat{x}[n]$')
     #ax_lin.legend(loc='best')
-    #ax_lpe.plot(g_x,color='red',lw=2,label='$g[n]$')
+    ax_lpe.plot(g_x,color='red',lw=2,label='$g[n]$')
     #ax_lpe.legend(loc='best')
-    #fig.savefig(path+'lpc/'+clock_type+'_'+ftype+'/lpc_x_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
-    #fig.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/lpc_x_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
-    ## predict y[n]
-    #ax_lin.clear()
-    #ax_lpe.clear()
+    # unify axis limits
+    y_min_lin,y_max_lin = min(min(x_eqdist),min(y_eqdist)),max(max(x_eqdist),max(y_eqdist))
+    y_min_lpe,y_max_lpe = min(min(g_x),min(g_y)),max(max(g_x),max(g_y))
+    ax_lin.set_ylim(y_min_lin-5,y_max_lin+5)
+    ax_lpe.set_ylim(y_min_lpe-0.1,y_max_lpe+0.1)
+    j = 1
+    for v1 in ax_lin.get_yticklabels():
+        v1.set_fontsize(21)
+        #if j%2==0:
+        #    v1.set_visible(False)
+        j += 1
+    j = 1
+    for v2 in ax_lpe.get_yticklabels():
+        v2.set_fontsize(21)
+        if j%2==0:
+            v2.set_visible(False)
+        j += 1
+    j = 1
+    for v1 in ax_lin.get_xticklabels():
+        v1.set_fontsize(21)
+        if j%2==0:
+            v1.set_visible(False)
+        j += 1
+    j = 1
+    for v2 in ax_lpe.get_xticklabels():
+        v2.set_fontsize(21)
+        if j%2==0:
+            v2.set_visible(False)
+        j += 1
+    fig.savefig(path+'lpc/'+clock_type+'_'+ftype+'/lpc_x_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+    fig.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/lpc_x_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+    # predict y[n]
+    ax_lin.clear()
+    ax_lpe.clear()
     #ax_lin.set_title('Linear Prediction of y[n]',fontsize=20)
-    #ax_lin.plot(y_eqdist,color='blue',lw=2,label=r'$y_{eqdist}[n]$')
-    #ax_lin.plot(y_hat,'k-.',lw=3,label=r'$\hat{y}[n]$')
+    ax_lin.plot(y_eqdist,color='blue',lw=2,label=r'$y_{eqdist}[n]$')
+    ax_lin.plot(y_hat,'k-.',lw=3,label=r'$\hat{y}[n]$')
     #ax_lin.legend(loc='best')
-    #ax_lpe.plot(g_y,color='red',lw=2,label='$g[n]$')
+    ax_lpe.plot(g_y,color='red',lw=2,label='$g[n]$')
     #ax_lpe.legend(loc='best')
-    #fig.savefig(path+'lpc/'+clock_type+'_'+ftype+'/lpc_y_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
-    #fig.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/lpc_y_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+    # unify axis limits
+    ax_lin.set_ylim(y_min_lin-5,y_max_lin+5)
+    ax_lpe.set_ylim(y_min_lpe-0.1,y_max_lpe+0.1)
+    j = 1
+    for v1 in ax_lin.get_yticklabels():
+        v1.set_fontsize(21)
+        #if j%2==0:
+        #    v1.set_visible(False)
+        j += 1
+    j = 1
+    for v2 in ax_lpe.get_yticklabels():
+        v2.set_fontsize(21)
+        #if j%2==0:
+        #    v2.set_visible(False)
+        j += 1
+    j = 1
+    for v1 in ax_lin.get_xticklabels():
+        v1.set_fontsize(21)
+        if j%2==0:
+            v1.set_visible(False)
+        j += 1
+    j = 1
+    for v2 in ax_lpe.get_xticklabels():
+        v2.set_fontsize(21)
+        if j%2==0:
+            v2.set_visible(False)
+        j += 1
+    fig.savefig(path+'lpc/'+clock_type+'_'+ftype+'/lpc_y_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+    fig.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/lpc_y_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
 
 # compare linear prediction coefficients and total
 # energy in linear prediction error between the drawings of healthy and impaired patients
@@ -140,14 +196,22 @@ Eg_x_all = [elt[1] for elt in Eg_x]
 mean_x,std_x = mean(Eg_x_all),std(Eg_x_all)
 Eg_y_all = [elt[1] for elt in Eg_y]
 mean_y,std_y = mean(Eg_y_all),std(Eg_y_all)
-ct.make_hist([elt[1] for elt in Eg_x if elt[0]=='healthy'],
-             [elt[1] for elt in Eg_x if elt[0]=='impaired'],
-             15,mean_x-std_x,mean_x+std_x,'Relative Energy in Linear Prediction Error for x[n]','Eg_x_'+clock_type,path)
-ct.make_hist([elt[1] for elt in Eg_y if elt[0]=='healthy'],
-             [elt[1] for elt in Eg_y if elt[0]=='impaired'],
-             15,mean_y-std_y,mean_y+std_y,'Relative Energy in Linear Prediction Error for y[n]','Eg_y_'+clock_type,path)
+#ct.make_hist([elt[1] for elt in Eg_x if elt[0]=='healthy'],
+#             [elt[1] for elt in Eg_x if elt[0]=='impaired'],
+#             15,mean_x-std_x,mean_x+std_x,'Relative Energy in Linear Prediction Error for x[n]','Eg_x_'+clock_type,path)
+#ct.make_hist([elt[1] for elt in Eg_y if elt[0]=='healthy'],
+#             [elt[1] for elt in Eg_y if elt[0]=='impaired'],
+#             15,mean_y-std_y,mean_y+std_y,'Relative Energy in Linear Prediction Error for y[n]','Eg_y_'+clock_type,path)
 # in case the histograms don't come out right
-np.savetxt(path+'lpc/Eg_x_healthy_'+clock_type+'.txt',[elt[1] for elt in Eg_x if elt[0]=='healthy'])
-np.savetxt(path+'lpc/Eg_x_impaired_'+clock_type+'.txt',[elt[1] for elt in Eg_x if elt[0]=='impaired'])
-np.savetxt(path+'lpc/Eg_y_healthy_'+clock_type+'.txt',[elt[1] for elt in Eg_y if elt[0]=='healthy'])
-np.savetxt(path+'lpc/Eg_y_impaired_'+clock_type+'.txt',[elt[1] for elt in Eg_y if elt[0]=='impaired'])
+#np.savetxt(path+'lpc/Eg_x_healthy_'+clock_type+'.txt',[elt[1] for elt in Eg_x if elt[0]=='healthy'])
+#np.savetxt(path+'lpc/Eg_x_impaired_'+clock_type+'.txt',[elt[1] for elt in Eg_x if elt[0]=='impaired'])
+#np.savetxt(path+'lpc/Eg_y_healthy_'+clock_type+'.txt',[elt[1] for elt in Eg_y if elt[0]=='healthy'])
+#np.savetxt(path+'lpc/Eg_y_impaired_'+clock_type+'.txt',[elt[1] for elt in Eg_y if elt[0]=='impaired'])
+np.savetxt(path+'lpc/a1_x_healthy_'+clock_type+'.txt',[elt[1] for elt in ak_x_coeffs[0] if elt[0]=='healthy'])
+np.savetxt(path+'lpc/a1_x_impaired_'+clock_type+'.txt',[elt[1] for elt in ak_x_coeffs[0] if elt[0]=='impaired'])
+np.savetxt(path+'lpc/a1_y_healthy_'+clock_type+'.txt',[elt[1] for elt in ak_y_coeffs[0] if elt[0]=='healthy'])
+np.savetxt(path+'lpc/a1_y_impaired_'+clock_type+'.txt',[elt[1] for elt in ak_y_coeffs[0] if elt[0]=='impaired'])
+np.savetxt(path+'lpc/a2_x_healthy_'+clock_type+'.txt',[elt[1] for elt in ak_x_coeffs[1] if elt[0]=='healthy'])
+np.savetxt(path+'lpc/a2_x_impaired_'+clock_type+'.txt',[elt[1] for elt in ak_x_coeffs[1] if elt[0]=='impaired'])
+np.savetxt(path+'lpc/a2_y_healthy_'+clock_type+'.txt',[elt[1] for elt in ak_y_coeffs[1] if elt[0]=='healthy'])
+np.savetxt(path+'lpc/a2_y_impaired_'+clock_type+'.txt',[elt[1] for elt in ak_y_coeffs[1] if elt[0]=='impaired'])

@@ -11,7 +11,7 @@ from pylab import *
 import clock_test as ct
 ct = reload(ct)
 
-path = '/Users/cmedlock/Documents/DSP_UROP/all_data/'
+path = '/Users/cmedlock/Documents/DSP_UROP/data_for_report/'
 dirs = os.listdir(path)
 
 # copy or command clock?
@@ -42,6 +42,9 @@ for fname in dirs:
         ftype = 'impaired'
     else:
         print 'not a valid file name'
+    
+    if not os.path.exists(path+'figs_raw/'+fname[:len(fname)-4]):
+        os.makedirs(path+'figs_raw/'+fname[:len(fname)-4])
 
     x_eqdist = np.loadtxt(path+'norm_velocity_data/'+fname[:len(fname)-4]+'_x_eqdist_'+clock_type+'.txt')
     y_eqdist = np.loadtxt(path+'norm_velocity_data/'+fname[:len(fname)-4]+'_y_eqdist_'+clock_type+'.txt')
@@ -75,57 +78,71 @@ for fname in dirs:
     #freq = 2*np.pi/dft_size*k
     #freq = np.fft.fftfreq(n=1024,d=1/(2*np.pi)) # NB: centered around 0
     
-#    # plot
-#    fig_xt,fig_yt = plt.figure(),plt.figure()
-#    fig_xt.subplots_adjust(hspace=0.3)
-#    fig_yt.subplots_adjust(hspace=0.3)
-#    
-#    dftxk,dftyk = fig_xt.add_subplot(211),fig_yt.add_subplot(211)    
-#    linecolor_dft = 'red'
-#    dftxk.plot(posfreq,np.abs(dftx_posfreq),linecolor_dft)
-#    dftyk.plot(posfreq,np.abs(dfty_posfreq),linecolor_dft)
-#    dftxk.set_ylim(bottom=min(np.abs(dftx_posfreq[1:]))/10,top=max(np.abs(dftx))*10)
-#    dftyk.set_ylim(bottom=min(np.abs(dfty_posfreq[1:]))/10,top=max(np.abs(dfty))*10)
-#    dftxk.set_yscale('log')
-#    dftyk.set_yscale('log')
-#
-#    dftxk_zoom,dftyk_zoom = fig_xt.add_subplot(212),fig_yt.add_subplot(212)
-#    dftxk_zoom.stem(posfreq[:10],np.abs(dftx_posfreq[:10]),linecolor_dft,markerfmt='ro')
-#    dftyk_zoom.stem(posfreq[:10],np.abs(dfty_posfreq[:10]),linecolor_dft,markerfmt='ro')
-#    dftxk_zoom.set_ylim(bottom=min(np.abs(dftx_posfreq[1:10]))/10,top=max(np.abs(dftx))*10)
-#    dftyk_zoom.set_ylim(bottom=min(np.abs(dfty_posfreq[1:10]))/10,top=max(np.abs(dfty))*10)
-#    dftxk_zoom.set_yscale('log')
-#    dftyk_zoom.set_yscale('log')
-#    
-#    # set axis limits
-#    dftxk.set_xlim(right=posfreq[-1])
-#    dftyk.set_xlim(right=posfreq[-1])
-#    dftxk_zoom.set_xlim(left=0,right=posfreq[10])
-#    dftyk_zoom.set_xlim(left=0,right=posfreq[10])
-#    
-#    # set axis labels
-#    x_axis_fontsize = 20
-#    dftxk.set_xlabel(r'$k$',fontsize=x_axis_fontsize)
-#    dftyk.set_xlabel(r'$k$',fontsize=x_axis_fontsize)
-#    dftxk_zoom.set_xlabel(r'$k$',fontsize=x_axis_fontsize)
-#    dftyk_zoom.set_xlabel(r'$k$',fontsize=x_axis_fontsize)
-#
-#    y_axis_fontsize = 25
-#    linecolor_xy = 'blue'
-#        
-#    dftxk.set_ylabel(r'$|X[k]|$',color=linecolor_dft,fontsize=y_axis_fontsize)
-#    dftyk.set_ylabel(r'$|Y[k]|$',color=linecolor_dft,fontsize=y_axis_fontsize)
-#    for v1 in dftxk.get_yticklabels():
-#        v1.set_color(linecolor_dft)
-#    for v2 in dftyk.get_yticklabels():
-#        v2.set_color(linecolor_dft)
-#    dftxk_zoom.set_ylabel(r'$|X[k]|$',color=linecolor_dft,fontsize=y_axis_fontsize)
-#    dftyk_zoom.set_ylabel(r'$|Y[k]|$',color=linecolor_dft,fontsize=y_axis_fontsize)
-#    for v1 in dftxk_zoom.get_yticklabels():
-#        v1.set_color(linecolor_dft)
-#    for v2 in dftyk_zoom.get_yticklabels():
-#        v2.set_color(linecolor_dft)
-#    
+    # plot
+    fig_xt,fig_yt = plt.figure(),plt.figure()
+    #fig_xt.subplots_adjust(hspace=0.3)
+    #fig_yt.subplots_adjust(hspace=0.3)
+    fig_xt.subplots_adjust(left=0.15,bottom=0.15)
+    fig_yt.subplots_adjust(left=0.15,bottom=0.15)
+    
+    dftxk,dftyk = fig_xt.add_subplot(211),fig_yt.add_subplot(211)    
+    linecolor_dft = 'black'
+    dftxk.plot(posfreq,np.abs(dftx_posfreq),linecolor_dft)
+    dftyk.plot(posfreq,np.abs(dfty_posfreq),linecolor_dft)
+    dftxk.set_ylim(bottom=min(np.abs(dftx_posfreq[1:]))/10,top=max(np.abs(dftx))*10)
+    dftyk.set_ylim(bottom=min(np.abs(dfty_posfreq[1:]))/10,top=max(np.abs(dfty))*10)
+    dftxk.set_yscale('log')
+    dftyk.set_yscale('log')
+
+    dftxk_zoom,dftyk_zoom = fig_xt.add_subplot(212),fig_yt.add_subplot(212)
+    dftxk_zoom.stem(posfreq[:10],np.abs(dftx_posfreq[:10]),linecolor_dft,markerfmt='ko')
+    dftyk_zoom.stem(posfreq[:10],np.abs(dfty_posfreq[:10]),linecolor_dft,markerfmt='ko')
+    dftxk_zoom.set_ylim(bottom=min(np.abs(dftx_posfreq[1:10]))/10,top=max(np.abs(dftx))*10)
+    dftyk_zoom.set_ylim(bottom=min(np.abs(dfty_posfreq[1:10]))/10,top=max(np.abs(dfty))*10)
+    dftxk_zoom.set_yscale('log')
+    dftyk_zoom.set_yscale('log')
+    
+    # set axis limits
+    dftxk.set_xlim(right=posfreq[-1])
+    dftyk.set_xlim(right=posfreq[-1])
+    dftxk.set_ylim(bottom=10**(-1),top=10**4)
+    dftyk.set_ylim(bottom=10**(-1),top=10**4)
+    dftxk_zoom.set_xlim(left=0,right=posfreq[10])
+    dftyk_zoom.set_xlim(left=0,right=posfreq[10])
+    dftxk_zoom.set_ylim(bottom=1,top=10**4)
+    dftyk_zoom.set_ylim(bottom=1,top=10**4)
+    
+    # set axis labels
+    x_axis_fontsize = 30
+    #dftxk.set_xlabel(r'$k$',fontsize=x_axis_fontsize)
+    #dftyk.set_xlabel(r'$k$',fontsize=x_axis_fontsize)
+    dftxk_zoom.set_xlabel(r'$k$',fontsize=x_axis_fontsize)
+    dftyk_zoom.set_xlabel(r'$k$',fontsize=x_axis_fontsize)
+
+    y_axis_fontsize = 25
+    linecolor_xy = 'black'
+        
+    dftxk.set_ylabel(r'$|X[k]|$',color=linecolor_dft,fontsize=y_axis_fontsize)
+    dftyk.set_ylabel(r'$|Y[k]|$',color=linecolor_dft,fontsize=y_axis_fontsize)
+    for v1 in dftxk.get_yticklabels():
+        v1.set_fontsize(21)
+    for v2 in dftyk.get_yticklabels():
+        v2.set_fontsize(21)
+    for v1 in dftxk.get_xticklabels():
+        v1.set_fontsize(21)
+    for v2 in dftyk.get_xticklabels():
+        v2.set_fontsize(21)
+    dftxk_zoom.set_ylabel(r'$|X[k]|$',color=linecolor_dft,fontsize=y_axis_fontsize)
+    dftyk_zoom.set_ylabel(r'$|Y[k]|$',color=linecolor_dft,fontsize=y_axis_fontsize)
+    for v1 in dftxk_zoom.get_yticklabels():
+        v1.set_fontsize(21)
+    for v2 in dftyk_zoom.get_yticklabels():
+        v2.set_fontsize(21)
+    for v1 in dftxk_zoom.get_xticklabels():
+        v1.set_fontsize(21)
+    for v2 in dftyk_zoom.get_xticklabels():
+        v2.set_fontsize(21)
+    
 #    # add drawing type (healthy or impaired) and file name
 #    fig_xt.text(0.99, 0.96,fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
 #    fig_yt.text(0.99, 0.96,fname[:len(fname)-4],fontsize=10,color='red',va='baseline',ha='right',multialignment='left')
@@ -138,28 +155,28 @@ for fname in dirs:
 #        fig_yt.text(0.25, 0.955, 'IMPAIRED',fontsize=15,color='black',va='baseline',ha='right',multialignment='left')
 #    else:
 #        print 'not a valid filename'
-#        
-#    # save figures
-#    fig_xt.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/dftx_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
-#    fig_xt.savefig(path+'DFS_coefficients/'+clock_type+'_'+ftype+'/dftx_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
-#    fig_yt.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/dfty_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
-#    fig_yt.savefig(path+'DFS_coefficients/'+clock_type+'_'+ftype+'/dfty_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+
+    # save figures
+    fig_xt.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/dftx_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+    fig_xt.savefig(path+'DFS_coefficients/'+clock_type+'_'+ftype+'/dftx_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+    fig_yt.savefig(path+'figs_raw/'+fname[:len(fname)-4]+'/dfty_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
+    fig_yt.savefig(path+'DFS_coefficients/'+clock_type+'_'+ftype+'/dfty_'+clock_type+'_'+fname[:len(fname)-4]+'.png')
 
     plt.close('all')
 
-# compare energy in fundamental frequency for the drawings of healthy vs. impaired patients
-Epeak_x_all = [elt[1] for elt in Epeak_x]
-mean_x,std_x = mean(Epeak_x_all),std(Epeak_x_all)
-Epeak_y_all = [elt[1] for elt in Epeak_y]
-mean_y,std_y = mean(Epeak_y_all),std(Epeak_y_all)
-ct.make_hist([elt[1] for elt in Epeak_x if elt[0]=='healthy'],
-             [elt[1] for elt in Epeak_x if elt[0]=='impaired'],
-             15,mean_x-std_x/5,1.001,'Fraction of Energy in Fundamental Freq. for x[n]','Epeak_x_'+clock_type,path)
-ct.make_hist([elt[1] for elt in Epeak_y if elt[0]=='healthy'],
-             [elt[1] for elt in Epeak_y if elt[0]=='impaired'],
-             15,mean_y-std_y/5,1.001,'Fraction of Energy in Fundamental Freq. for y[n]','Epeak_y_'+clock_type,path)
-# in case the histograms don't come out right
-np.savetxt(path+'DFS_coefficients/Epeak_x_healthy_'+clock_type+'.txt',[elt[1] for elt in Epeak_x if elt[0]=='healthy'])
-np.savetxt(path+'DFS_coefficients/Epeak_x_impaired_'+clock_type+'.txt',[elt[1] for elt in Epeak_x if elt[0]=='impaired'])
-np.savetxt(path+'DFS_coefficients/Epeak_y_healthy_'+clock_type+'.txt',[elt[1] for elt in Epeak_y if elt[0]=='healthy'])
-np.savetxt(path+'DFS_coefficients/Epeak_y_impaired_'+clock_type+'.txt',[elt[1] for elt in Epeak_y if elt[0]=='impaired'])
+## compare energy in fundamental frequency for the drawings of healthy vs. impaired patients
+#Epeak_x_all = [elt[1] for elt in Epeak_x]
+#mean_x,std_x = mean(Epeak_x_all),std(Epeak_x_all)
+#Epeak_y_all = [elt[1] for elt in Epeak_y]
+#mean_y,std_y = mean(Epeak_y_all),std(Epeak_y_all)
+#ct.make_hist([elt[1] for elt in Epeak_x if elt[0]=='healthy'],
+#             [elt[1] for elt in Epeak_x if elt[0]=='impaired'],
+#             15,mean_x-std_x/5,1.001,'E_fund for x[n]','Epeak_x_'+clock_type,path)
+#ct.make_hist([elt[1] for elt in Epeak_y if elt[0]=='healthy'],
+#             [elt[1] for elt in Epeak_y if elt[0]=='impaired'],
+#             15,mean_y-std_y/5,1.001,'E_fund for y[n]','Epeak_y_'+clock_type,path)
+## in case the histograms don't come out right
+#np.savetxt(path+'DFS_coefficients/Epeak_x_healthy_'+clock_type+'.txt',[elt[1] for elt in Epeak_x if elt[0]=='healthy'])
+#np.savetxt(path+'DFS_coefficients/Epeak_x_impaired_'+clock_type+'.txt',[elt[1] for elt in Epeak_x if elt[0]=='impaired'])
+#np.savetxt(path+'DFS_coefficients/Epeak_y_healthy_'+clock_type+'.txt',[elt[1] for elt in Epeak_y if elt[0]=='healthy'])
+#np.savetxt(path+'DFS_coefficients/Epeak_y_impaired_'+clock_type+'.txt',[elt[1] for elt in Epeak_y if elt[0]=='impaired'])

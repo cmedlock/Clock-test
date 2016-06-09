@@ -16,12 +16,9 @@ dirs = os.listdir(path)
 
 pi = math.pi
 
-# copy or command clock?
-clock_type = 'copy'
-
 n = np.arange(250)
 omega = 2*math.pi/250.
-axis_ratios = np.linspace(1,5,5)
+axis_ratios = np.linspace(1,1.2,100)
 
 # model order
 p = 2
@@ -56,42 +53,42 @@ for ratio in axis_ratios:
     dist_total = sum(dists)
 
     # if the points are already evenly-spaced, don't interpolate
-    if np.var(np.array(dists))<10**-12:
-        x_eqdist,y_eqdist = x,y
-    else:
-        # now want to get N_orig evenly-spaced points along the curve
+    #if np.var(np.array(dists))<10**-12:
+    #    x_eqdist,y_eqdist = x,y
+    #else:
+    # now want to get N_orig evenly-spaced points along the curve
 
-        # generate a much longer array with 199 linearly-interpolated 
-        # points between the actual data points
-        x_interp,y_interp = [],[]
-        for w in range(len(x)-1):
-            x_interp.append(x[w])
-            y_interp.append(y[w])
-            dx,dy = x[w+1]-x[w],y[w+1]-y[w]
-            dist = math.sqrt(dx**2+dy**2)
-            n_segments = ceil(dist/dist_avg)*200
-            for r in range(1,int(n_segments)):
-                x_new = x[w]+r*dx/n_segments
-                y_new = y[w]+r*dy/n_segments
-                x_interp.append(x_new)
-                y_interp.append(y_new)
-        x_interp.append(x[-1])
-        y_interp.append(y[-1])
+    # generate a much longer array with 199 linearly-interpolated 
+    # points between the actual data points
+    x_interp,y_interp = [],[]
+    for w in range(len(x)-1):
+        x_interp.append(x[w])
+        y_interp.append(y[w])
+        dx,dy = x[w+1]-x[w],y[w+1]-y[w]
+        dist = math.sqrt(dx**2+dy**2)
+        n_segments = ceil(dist/dist_avg)*200
+        for r in range(1,int(n_segments)):
+            x_new = x[w]+r*dx/n_segments
+            y_new = y[w]+r*dy/n_segments
+            x_interp.append(x_new)
+            y_interp.append(y_new)
+    x_interp.append(x[-1])
+    y_interp.append(y[-1])
 
-        # start from the first point and find the ones that are 
-        # approximately a distance dist_avg from each other
-        x_eqdist,y_eqdist = [x_interp[0]],[y_interp[0]]
-        idx = 0
-        for k in range(N_new-1):
-            dist_sofar = 0
-            for j in range(idx,len(x_interp)-1):
-                dx,dy = x_interp[j+1]-x_interp[j],y_interp[j+1]-y_interp[j]
-                dist_sofar += math.sqrt(dx**2+dy**2)
-                if abs(dist_sofar-dist_total/250.)<dist_total/(250.*100.):
-                    idx = j+1
-	            break
-            x_eqdist.append(x_interp[idx])
-            y_eqdist.append(y_interp[idx])
+    # start from the first point and find the ones that are 
+    # approximately a distance dist_avg from each other
+    x_eqdist,y_eqdist = [x_interp[0]],[y_interp[0]]
+    idx = 0
+    for k in range(N_new-1):
+        dist_sofar = 0
+        for j in range(idx,len(x_interp)-1):
+            dx,dy = x_interp[j+1]-x_interp[j],y_interp[j+1]-y_interp[j]
+            dist_sofar += math.sqrt(dx**2+dy**2)
+            if abs(dist_sofar-dist_total/250.)<dist_total/(250.*100.):
+                idx = j+1
+            break
+        x_eqdist.append(x_interp[idx])
+        y_eqdist.append(y_interp[idx])
 
     # subtract mean values so there is no DC term adding an extra pole
     x_eqdist = [elt-mean(x_eqdist) for elt in x_eqdist]
@@ -151,40 +148,73 @@ for ratio in axis_ratios:
 
     # plot
     plt.close('all')
-    np.set_printoptions(precision=2)
-    fig = plt.figure()
-    #ax = fig.add_subplot(111)
-    #ax.plot(x,y)
-    #fig.savefig(path+'circle_ellipse_lpc/rotated_ellipse_test_ratio_'+str(ratio)+'.png')
-    ax_lin,ax_lpe = fig.add_subplot(211),fig.add_subplot(212)
-    # predict x[n]
-    ax_lin.set_title('Linear Prediction of x[n]',fontsize=20)
-    ax_lin.plot(x_eqdist,color='blue',lw=2,label=r'$x_{eqdist}[n]$')
-    ax_lin.plot(x_hat,'k-.',lw=3,label=r'$\hat{x}[n]$')
-    ax_lin.legend(loc='best')
-    ax_lpe.plot(g_x,color='red',lw=2,label='$g[n]$')
-    ax_lpe.legend(loc='best')
-    fig.savefig(path+'circle_ellipse_lpc/lpc_x_ratio_'+str(ratio)+'.png')
-    # predict y[n]
-    ax_lin.clear()
-    ax_lpe.clear()
-    ax_lin.set_title('Linear Prediction of y[n]',fontsize=20)
-    ax_lin.plot(y_eqdist,color='blue',lw=2,label=r'$y_{eqdist}[n]$')
-    ax_lin.plot(y_hat,'k-.',lw=3,label=r'$\hat{y}[n]$')
-    ax_lin.legend(loc='best')
-    ax_lpe.plot(g_y,color='red',lw=2,label='$g[n]$')
-    ax_lpe.legend(loc='best')
-    fig.savefig(path+'circle_ellipse_lpc/lpc_y_ratio_'+str(ratio)+'.png')
+    #np.set_printoptions(precision=2)
+    #fig = plt.figure()
+    ##ax = fig.add_subplot(111)
+    ##ax.plot(x,y)
+    ##fig.savefig(path+'circle_ellipse_lpc/rotated_ellipse_test_ratio_'+str(ratio)+'.png')
+    #ax_lin,ax_lpe = fig.add_subplot(211),fig.add_subplot(212)
+    ## predict x[n]
+    #ax_lin.set_title('Linear Prediction of x[n]',fontsize=20)
+    #ax_lin.plot(x_eqdist,color='blue',lw=2,label=r'$x_{eqdist}[n]$')
+    #ax_lin.plot(x_hat,'k-.',lw=3,label=r'$\hat{x}[n]$')
+    #ax_lin.legend(loc='best')
+    #ax_lpe.plot(g_x,color='red',lw=2,label='$g[n]$')
+    #ax_lpe.legend(loc='best')
+    #fig.savefig(path+'circle_ellipse_lpc/lpc_x_ratio_'+str(ratio)+'.png')
+    ## predict y[n]
+    #ax_lin.clear()
+    #ax_lpe.clear()
+    #ax_lin.set_title('Linear Prediction of y[n]',fontsize=20)
+    #ax_lin.plot(y_eqdist,color='blue',lw=2,label=r'$y_{eqdist}[n]$')
+    #ax_lin.plot(y_hat,'k-.',lw=3,label=r'$\hat{y}[n]$')
+    #ax_lin.legend(loc='best')
+    #ax_lpe.plot(g_y,color='red',lw=2,label='$g[n]$')
+    #ax_lpe.legend(loc='best')
+    #fig.savefig(path+'circle_ellipse_lpc/lpc_y_ratio_'+str(ratio)+'.png')
 
 # compare percent energy in linear prediction error
 plt.close('all')
 fig = plt.figure()
-fig.subplots_adjust(hspace=0.6,left=0.15)
+fig.subplots_adjust(hspace=0.6,left=0.15,bottom=0.15)
 ax = fig.add_subplot(111)
 ax.clear()
-ax.scatter(axis_ratios,Eg_x,color='blue',marker='o',s=100,alpha=0.5,label='x')
-ax.scatter(axis_ratios,Eg_y,color='red',marker='^',s=100,alpha=0.5,label='y')
-ax.set_xlabel('(major axis length)/(minor axis length)',fontsize=20)
+
+Eg_x_low_eccentricity,Eg_y_low_eccentricity = [],[]
+Eg_x_high_eccentricity,Eg_y_high_eccentricity = [],[]
+for w in range(len(axis_ratios)):
+    if axis_ratios[w]<1.05:
+        Eg_x_low_eccentricity.append(Eg_x[w])
+        Eg_y_low_eccentricity.append(Eg_y[w])
+    else:
+        Eg_x_high_eccentricity.append(Eg_x[w])
+        Eg_y_high_eccentricity.append(Eg_y[w])
+
+#Eg_x_low_eccentricity = np.loadtxt('/Users/cmedlock/Documents/DSP_UROP/Eg_x_low_eccentricity.txt')
+#Eg_x_high_eccentricity = np.loadtxt('/Users/cmedlock/Documents/DSP_UROP/Eg_x_high_eccentricity.txt')
+#Eg_y_low_eccentricity = np.loadtxt('/Users/cmedlock/Documents/DSP_UROP/Eg_y_low_eccentricity.txt')
+#Eg_y_high_eccentricity = np.loadtxt('/Users/cmedlock/Documents/DSP_UROP/Eg_y_high_eccentricity.txt')
+
+ax.scatter(Eg_x_low_eccentricity,Eg_y_low_eccentricity,color='green',marker='o',alpha=0.5,label='(major axis)/(minor axis) < 1.05')
+ax.scatter(Eg_x_high_eccentricity,Eg_y_high_eccentricity,color='black',marker='o',alpha=0.5,label='(major axis)/(minor axis) > 1.05')
+ax.set_xlim(0,0.0015)
+ax.set_ylim(0.035,0.05)
+ax.set_xlabel(r'$E_g^x/E_{total} \times 10^4$',fontsize=20)
+ax.set_ylabel(r'$E_g^y/E_{total} \times 10^4$',fontsize=20)
+ax.legend(loc='lower right')
+fig.savefig(path+'circle_ellipse_lpc/compare_Eg_x_and_y.png')
+
+ax.clear()
+Eg_x = np.concatenate((Eg_x_low_eccentricity,Eg_x_high_eccentricity))
+Eg_y = np.concatenate((Eg_y_low_eccentricity,Eg_y_high_eccentricity))
+ax.scatter(axis_ratios,Eg_x,color='blue',marker='o',alpha=0.5,label=r'$E_g^x$')
+ax.scatter(axis_ratios,Eg_y,color='red',marker='o',alpha=0.5,label=r'$E_g^y$')
+ax.set_xlabel('(major axis)/(minor axis)',fontsize=20)
 ax.set_ylabel(r'$E_g/E_{total} \times 10^4$',fontsize=20)
-ax.legend(loc='best')
+ax.legend(loc='upper left')
 fig.savefig(path+'circle_ellipse_lpc/compare_Eg.png')
+
+np.savetxt('Eg_x_low_eccentricity.txt',Eg_x_low_eccentricity)
+np.savetxt('Eg_y_high_eccentricity.txt',Eg_y_high_eccentricity)
+np.savetxt('Eg_y_low_eccentricity.txt',Eg_y_low_eccentricity)
+np.savetxt('Eg_x_high_eccentricity.txt',Eg_x_high_eccentricity)

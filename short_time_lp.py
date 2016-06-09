@@ -16,7 +16,7 @@ dirs = os.listdir(path)
 pi = math.pi
 
 # copy or command clock?
-clock_type = 'copy'
+clock_type = 'command'
 
 # path to short time linear prediction figures
 if not os.path.exists(path+'short_time_lp'):
@@ -54,14 +54,14 @@ for fname in dirs:
         if w%3==0:
             x_downsampled.append(x_eqdist[w])
             y_downsampled.append(y_eqdist[w])
-    x_eqdist,y_eqdist = np.array(x_downsampled),np.array(y_downsampled)
+    #x_eqdist,y_eqdist = np.array(x_downsampled),np.array(y_downsampled)
 
-   # extract frequency from each set of 3 points using the formula
+    # extract frequency from each set of 3 points using the formula
     # w[n] = 2*cos(omega)*w[n-1] - w[n-2]
     x_freq,y_freq = [],[]
     for w in range(len(x_eqdist)):
         frequency_x = (x_eqdist[w]+x_eqdist[w-2])/(2*x_eqdist[w-1])
-        frequency_y = (y_eqdist[w]+y_eqdist[w-2])/(2*x_eqdist[w-1])
+        frequency_y = (y_eqdist[w]+y_eqdist[w-2])/(2*y_eqdist[w-1])
         x_freq.append(frequency_x)
         y_freq.append(frequency_y)
     freq_var_x.append((ftype,var(x_freq)))
@@ -102,14 +102,16 @@ for fname in dirs:
 # compare short time frequency variance for the drawings of healthy vs. impaired patients
 freq_var_x_all = [elt[1] for elt in freq_var_x]
 mean_x,std_x = mean(freq_var_x_all),std(freq_var_x_all)
+print 'mean_x,std_x = ',mean_x,std_x
 freq_var_y_all = [elt[1] for elt in freq_var_y]
 mean_y,std_y = mean(freq_var_y_all),std(freq_var_y_all)
-ct.make_hist([elt[1] for elt in freq_var_x if elt[0]=='healthy'],
-             [elt[1] for elt in freq_var_x if elt[0]=='impaired'],
-             15,mean_x-std_x,mean_x+std_x,'Variance in Short Time Frequency for x[n]','freq_var_x_'+clock_type,path)
-ct.make_hist([elt[1] for elt in freq_var_y if elt[0]=='healthy'],
-             [elt[1] for elt in freq_var_y if elt[0]=='impaired'],
-             15,mean_y-std_y,mean_y+std_y,'Variance in Short Time Frequency for y[n]','freq_var_y_'+clock_type,path)
+print 'mean_y,std_y = ',mean_y,std_y
+#ct.make_hist([elt[1] for elt in freq_var_x if elt[0]=='healthy'],
+#             [elt[1] for elt in freq_var_x if elt[0]=='impaired'],
+#             15,mean_x-std_x,mean_x+std_x,'Variance in Short Time Frequency for x[n]','freq_var_x_'+clock_type,path)
+#ct.make_hist([elt[1] for elt in freq_var_y if elt[0]=='healthy'],
+#             [elt[1] for elt in freq_var_y if elt[0]=='impaired'],
+#             15,mean_y-std_y,mean_y+std_y,'Variance in Short Time Frequency for y[n]','freq_var_y_'+clock_type,path)
 # in case the histograms don't come out right
 np.savetxt(path+'short_time_lp/freq_var_x_healthy_'+clock_type+'.txt',[elt[1] for elt in freq_var_x if elt[0]=='healthy'])
 np.savetxt(path+'short_time_lp/freq_var_x_impaired_'+clock_type+'.txt',[elt[1] for elt in freq_var_x if elt[0]=='impaired'])
