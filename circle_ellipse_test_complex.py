@@ -11,90 +11,25 @@ from pylab import *
 import clock_test as ct
 ct = reload(ct)
 
-path = '/Users/cmedlock/Documents/DSP_UROP/'
+path = '/Users/cmedlock/Documents/DSP_UROP/simulated data/'
 dirs = os.listdir(path)
 
+# path to figures for each individual file
+if not os.path.exists(path+'compare circles ellipses'):
+    os.makedirs(path+'compare circles ellipses')
+    
 pi = math.pi
-
-n = np.arange(250)
-omega = 2*math.pi/250.
-axis_ratios = np.linspace(1,1.2,150)
 
 # model order
 p = 1
 Eg_x = [] # energy in g[n] (i.e. linear prediction error) when predicting x[n]
 Eg_y = [] # energy in g[n] (i.e. linear prediction error) when predicting y[n]
 
+axis_ratios = np.linspace(1,1.2,100)
 for ratio in axis_ratios:
-    print 'ratio is now ',ratio
-    x = np.cos(omega*n)
-    y = ratio*np.sin(omega*n)
-    
-    # compensate for non-constant velocity
-    
-    N_orig = len(x)
-    N_new = N_orig
 
-    # calculate average distance between points
-    dists = []
-    for w in range(1,len(x)):
-        dx,dy = x[w]-x[w-1],y[w]-y[w-1]
-        dist = math.sqrt(dx**2+dy**2)
-        dists.append(dist)
-    dist_avg = mean(dists)
-    dist_total = sum(dists)
-
-    # if the points are already evenly spaced, don't interpolate
-    #if np.var(np.array(dists))<10**-12:
-        #x_eqdist,y_eqdist = x,y
-    #else:
-    # now want to get N_orig evenly-spaced points along the curve
-
-    # generate a much longer array with 199 linearly-interpolated 
-    # points between the actual data points
-    x_interp,y_interp = [],[]
-    for w in range(len(x)-1):
-        x_interp.append(x[w])
-        y_interp.append(y[w])
-        dx,dy = x[w+1]-x[w],y[w+1]-y[w]
-        dist = math.sqrt(dx**2+dy**2)
-        n_segments = ceil(dist/dist_avg)*200
-        for r in range(1,int(n_segments)):
-            x_new = x[w]+r*dx/n_segments
-            y_new = y[w]+r*dy/n_segments
-            x_interp.append(x_new)
-            y_interp.append(y_new)
-    x_interp.append(x[-1])
-    y_interp.append(y[-1])
-
-    # start from the first point and find the ones that are 
-    # approximately a distance dist_avg from each other
-    x_eqdist,y_eqdist = [x_interp[0]],[y_interp[0]]
-    idx = 0
-    for k in range(N_new-1):
-        dist_sofar = 0
-        for j in range(idx,len(x_interp)-1):
-            dx,dy = x_interp[j+1]-x_interp[j],y_interp[j+1]-y_interp[j]
-            dist_sofar += math.sqrt(dx**2+dy**2)
-            if abs(dist_sofar-dist_total/float(N_new))<dist_total/(float(N_new)*100.):
-                idx = j+1
-                break
-        x_eqdist.append(x_interp[idx])
-        y_eqdist.append(y_interp[idx])
-
-    # subtract mean values so there is no DC term adding an extra pole
-    x_eqdist = [elt-mean(x_eqdist) for elt in x_eqdist]
-    y_eqdist = [elt-mean(y_eqdist) for elt in y_eqdist]
-
-    # downsample by a factor of 2
-    x_downsampled,y_downsampled = [],[]
-    for w in range(len(x_eqdist)):
-        if w%2==0:
-            x_downsampled.append(x_eqdist[w])
-            y_downsampled.append(y_eqdist[w])
-    #x_eqdist,y_eqdist = np.array(x_downsampled),np.array(y_downsampled)
-
-    x_eqdist,y_eqdist = np.array(x_eqdist),np.array(y_eqdist)
+    x_eqdist = np.loadtxt(path+'norm velocity data/perfect_ellipse_x_eqdist_ratio_'+str(ratio)[:5]+'.txt')
+    y_eqdist = np.loadtxt(path+'norm velocity data/perfect_ellipse_y_eqdist_ratio_'+str(ratio)[:5]+'.txt')
     
     z_eqdist = x_eqdist+1j*y_eqdist
     z_eqdist = z_eqdist+0j
@@ -173,9 +108,13 @@ ax.scatter(Eg_x_high_eccentricity,Eg_y_high_eccentricity,color='black',marker='o
 #ax.set_ylim(0.035,0.05)
 ax.set_xlabel(r'$E_g^x/E_{total} \times 10^4$',fontsize=20)
 ax.set_ylabel(r'$E_g^y/E_{total} \times 10^4$',fontsize=20)
+for v1 in ax.get_xticklabels():
+    v1.set_fontsize(17)
+for v2 in ax.get_yticklabels():
+    v2.set_fontsize(17)
 ax.legend(loc='lower right')
-fig.savefig(path+'circle_ellipse_lpc/compare_complex_Eg_x_and_y.png')
-
+fig.savefig(path+'compare circles ellipses/compare_complex_Eg_x_and_y.png')
+"""
 ax.clear()
 Eg_x = np.concatenate((Eg_x_low_eccentricity,Eg_x_high_eccentricity))
 Eg_y = np.concatenate((Eg_y_low_eccentricity,Eg_y_high_eccentricity))
@@ -185,3 +124,4 @@ ax.set_xlabel('(major axis)/(minor axis)',fontsize=20)
 ax.set_ylabel(r'$E_g/E_{total} \times 10^4$',fontsize=20)
 ax.legend(loc='upper left')
 fig.savefig(path+'circle_ellipse_lpc/compare_complex_Eg.png')
+"""

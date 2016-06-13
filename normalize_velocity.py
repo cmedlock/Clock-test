@@ -90,7 +90,7 @@ for fname in dirs[:5]:
         np.savetxt(path+'norm_velocity_data/'+fname[:len(fname)-4]+'_y_eqdist_'+clock_type.lower()+'.txt',y)
         print fname
         continue
-
+    
     # compensate for non-constant velocity
     
     N_orig = len(x)

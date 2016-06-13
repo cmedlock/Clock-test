@@ -11,7 +11,7 @@ from pylab import *
 import clock_test as ct
 ct = reload(ct)
 
-path = '/Users/cmedlock/Documents/DSP_UROP/data_for_report/'
+path = '/Users/cmedlock/Documents/DSP_UROP/simulated data/'
 dirs = os.listdir(path)
 
 # copy or command clock?
